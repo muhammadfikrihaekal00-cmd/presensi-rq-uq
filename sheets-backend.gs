@@ -142,10 +142,32 @@ function readLogs(ss) {
   for (let i = 1; i < rows.length; i++) {
     const r = rows[i];
     if (!r[0] && !r[3]) continue;
+
+    let dateVal = r[1];
+    let dateStr = '';
+    if (dateVal instanceof Date) {
+      const yr = dateVal.getFullYear();
+      const mo = String(dateVal.getMonth() + 1).padStart(2, '0');
+      const da = String(dateVal.getDate()).padStart(2, '0');
+      dateStr = `${yr}-${mo}-${da}`;
+    } else {
+      dateStr = String(dateVal || '').replace(/^'/, '');
+    }
+
+    let timeVal = r[2];
+    let timeStr = '';
+    if (timeVal instanceof Date) {
+      const hr = String(timeVal.getHours()).padStart(2, '0');
+      const mi = String(timeVal.getMinutes()).padStart(2, '0');
+      timeStr = `${hr}:${mi}`;
+    } else {
+      timeStr = String(timeVal || '').replace(/^'/, '');
+    }
+
     logs.push({
       id: String(r[0] || ('log-' + i)),
-      date: String(r[1] || ''),
-      time: String(r[2] || ''),
+      date: dateStr,
+      time: timeStr,
       teacherName: String(r[3] || ''),
       teacherId: String(r[4] || ''),
       type: String(r[5] || 'Hadir'),
@@ -206,8 +228,8 @@ function appendLog(ss, log) {
   if (!sheet) return;
 
   const id = log.id || ('log-' + Date.now());
-  const dateStr = log.date || '';
-  const timeStr = log.time || '';
+  const dateStr = "'" + (log.date || '');
+  const timeStr = "'" + (log.time || '');
   const teacherName = log.teacherName || '';
   const teacherId = log.teacherId || '';
   const type = log.type || 'Hadir';

@@ -81,6 +81,68 @@
   }
 
   /**
+   * Normalisasi tanggal ke format ISO YYYY-MM-DD
+   * Menangani format Date object dari Google Sheets, ISO string, maupun format lokal
+   */
+  function normalizeDate(val) {
+    if (!val) return '';
+    const str = String(val).trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
+      return str;
+    }
+    // String Date bawaan Google Sheets: misal "Mon Oct 12 2026 00:00:00 GMT+0800..."
+    const months = {
+      Jan: '01', Feb: '02', Mar: '03', Apr: '04', May: '05', Jun: '06',
+      Jul: '07', Aug: '08', Sep: '09', Oct: '10', Nov: '11', Dec: '12'
+    };
+    const match = str.match(/([A-Za-z]{3})\s+([A-Za-z]{3})\s+(\d{1,2})\s+(\d{4})/);
+    if (match) {
+      const mNum = months[match[2]] || '01';
+      const day = match[3].padStart(2, '0');
+      const yr = match[4];
+      return `${yr}-${mNum}-${day}`;
+    }
+    // Format DD/MM/YYYY atau DD-MM-YYYY
+    const slashMatch = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+    if (slashMatch) {
+      const day = slashMatch[1].padStart(2, '0');
+      const mo = slashMatch[2].padStart(2, '0');
+      const yr = slashMatch[3];
+      return `${yr}-${mo}-${day}`;
+    }
+    if (str.includes('T')) {
+      const parts = str.split('T');
+      if (/^\d{4}-\d{2}-\d{2}$/.test(parts[0])) return parts[0];
+    }
+    const cleanStr = str.replace(/\(.*?\)/g, '').trim();
+    const d = new Date(cleanStr);
+    if (!isNaN(d.getTime())) {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    }
+    return str;
+  }
+
+  /**
+   * Normalisasi jam ke format HH:mm
+   * Menangani format timestamp 1899 dari Google Sheets
+   */
+  function normalizeTime(val) {
+    if (!val) return '';
+    const str = String(val).trim();
+    if (/^\d{1,2}:\d{2}$/.test(str)) {
+      return str.padStart(5, '0');
+    }
+    const match = str.match(/(\d{1,2}):(\d{2})/);
+    if (match) {
+      return match[1].padStart(2, '0') + ':' + match[2];
+    }
+    return str;
+  }
+
+  /**
    * Ambil seluruh data dari Google Spreadsheet via GET
    */
   async function fetchAllFromSheet() {
@@ -102,6 +164,14 @@
 
       if (data && data.status === 'success') {
         updateStatus('online');
+        // Normalisasi tanggal dan jam agar selalu serasi dengan aplikasi
+        if (Array.isArray(data.logs)) {
+          data.logs = data.logs.map(log => ({
+            ...log,
+            date: normalizeDate(log.date),
+            time: normalizeTime(log.time)
+          }));
+        }
         return data;
       } else {
         throw new Error(data.message || 'Format respon spreadsheet tidak sesuai');
@@ -128,7 +198,12 @@
 
   // Operasi spesifik
   async function recordAttendance(log) {
-    return await postToSheet('record_attendance', { data: log });
+    const cleanLog = {
+      ...log,
+      date: normalizeDate(log.date),
+      time: normalizeTime(log.time)
+    };
+    return await postToSheet('record_attendance', { data: cleanLog });
   }
 
   async function deleteAttendance(logId) {
@@ -183,7 +258,9 @@
     saveGeneralSettings,
     saveSlipSettings,
     saveSalaryOverrides,
-    uploadAllLocalToSpreadsheet
+    uploadAllLocalToSpreadsheet,
+    normalizeDate,
+    normalizeTime
   };
 
 })(window);

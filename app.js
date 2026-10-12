@@ -193,7 +193,11 @@ function loadDataFromStorage() {
       const storedLogs = localStorage.getItem(STORAGE_KEYS.LOGS);
       const parsedLogs = safeJsonParse(storedLogs, null);
       if (Array.isArray(parsedLogs)) {
-        attendanceLogs = parsedLogs;
+        attendanceLogs = parsedLogs.map(l => ({
+          ...l,
+          date: normalizeSheetDate(l.date),
+          time: normalizeSheetTime(l.time)
+        }));
       } else {
         attendanceLogs = [];
         saveLogsToStorage();
@@ -2646,6 +2650,94 @@ function escapeHtml(str) {
     .replace(/'/g, '&#039;');
 }
 
+/**
+ * Normalisasi format tanggal sheet (mendukung format Date Google Sheets e.g. "Mon Oct 12 2026...")
+ */
+function normalizeSheetDate(val) {
+  if (!val) return '';
+  if (window.RQ_SHEETS && window.RQ_SHEETS.normalizeDate) {
+    return window.RQ_SHEETS.normalizeDate(val);
+  }
+  const str = String(val).trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;
+  const months = {
+    Jan: '01', Feb: '02', Mar: '03', Apr: '04', May: '05', Jun: '06',
+    Jul: '07', Aug: '08', Sep: '09', Oct: '10', Nov: '11', Dec: '12'
+  };
+  const match = str.match(/([A-Za-z]{3})\s+([A-Za-z]{3})\s+(\d{1,2})\s+(\d{4})/);
+  if (match) {
+    return `${match[4]}-${months[match[2]] || '01'}-${match[3].padStart(2, '0')}`;
+  }
+  const cleanStr = str.replace(/\(.*?\)/g, '').trim();
+  const d = new Date(cleanStr);
+  if (!isNaN(d.getTime())) {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  }
+  return str;
+}
+
+/**
+ * Normalisasi jam ke format HH:mm
+ */
+function normalizeSheetTime(val) {
+  if (!val) return '';
+  if (window.RQ_SHEETS && window.RQ_SHEETS.normalizeTime) {
+    return window.RQ_SHEETS.normalizeTime(val);
+  }
+  const str = String(val).trim();
+  if (/^\d{1,2}:\d{2}$/.test(str)) return str.padStart(5, '0');
+  const match = str.match(/(\d{1,2}):(\d{2})/);
+  if (match) {
+    return match[1].padStart(2, '0') + ':' + match[2];
+  }
+  return str;
+}
+
+/**
+ * Menggabungkan log remote dari spreadsheet dengan log lokal agar data yang baru diisi tidak hilang
+ */
+function mergeAttendanceLogs(remoteLogs, localLogs) {
+  const map = new Map();
+  // Remote logs dari Spreadsheet
+  (remoteLogs || []).forEach(r => {
+    if (r && r.id) {
+      map.set(r.id, {
+        ...r,
+        date: normalizeSheetDate(r.date),
+        time: normalizeSheetTime(r.time)
+      });
+    }
+  });
+
+  // Local logs: pertahankan log yang baru dibuat jika belum masuk ke remote
+  (localLogs || []).forEach(l => {
+    if (l && l.id) {
+      if (!map.has(l.id)) {
+        const normDate = normalizeSheetDate(l.date);
+        const alreadyInRemote = (remoteLogs || []).some(
+          r => r.teacherId === l.teacherId && normalizeSheetDate(r.date) === normDate
+        );
+        if (!alreadyInRemote) {
+          map.set(l.id, {
+            ...l,
+            date: normDate,
+            time: normalizeSheetTime(l.time)
+          });
+        }
+      }
+    }
+  });
+
+  return Array.from(map.values()).sort((a, b) => {
+    const timeA = `${a.date || ''} ${a.time || ''}`;
+    const timeB = `${b.date || ''} ${b.time || ''}`;
+    return timeB.localeCompare(timeA);
+  });
+}
+
 /* ============================================================
    GOOGLE SPREADSHEET DATABASE SYNCHRONIZATION
    ============================================================ */
@@ -2676,9 +2768,14 @@ function applySheetsDataReceived(data) {
     hasChanges = true;
   }
 
-  // 2. Sinkronkan Presensi
+  // 2. Sinkronkan Presensi dengan normalisasi tanggal & penggabungan aman
   if (Array.isArray(data.logs)) {
-    attendanceLogs = data.logs;
+    const normalizedRemoteLogs = data.logs.map(log => ({
+      ...log,
+      date: normalizeSheetDate(log.date),
+      time: normalizeSheetTime(log.time)
+    }));
+    attendanceLogs = mergeAttendanceLogs(normalizedRemoteLogs, attendanceLogs);
     saveLogsToStorage();
     hasChanges = true;
   }
@@ -2901,7 +2998,7 @@ async function syncLocalToSheetsAction() {
 
 function copySheetsScriptCode() {
   // Script Google Apps Script yang siap disalin
-  const scriptCode = `function doGet(e){try{var s=SpreadsheetApp.getActiveSpreadsheet();ensureStructure(s);return ContentService.createTextOutput(JSON.stringify({status:"success",teachers:readTeachers(s),logs:readLogs(s),settings:readSettings(s).settings||{},slipSettings:readSettings(s).slipSettings||{},adminPin:readSettings(s).adminPin||"1234",salaryOverrides:readSettings(s).salaryOverrides||{}})).setMimeType(ContentService.MimeType.JSON)}catch(r){return ContentService.createTextOutput(JSON.stringify({status:"error",message:r.toString()})).setMimeType(ContentService.MimeType.JSON)}}function doPost(e){try{var s=SpreadsheetApp.getActiveSpreadsheet();ensureStructure(s);var t={};e&&e.postData&&e.postData.contents?t=JSON.parse(e.postData.contents):t=e.parameter||{};var a=t.action;"record_attendance"===a?appendLog(s,t.data):"delete_log"===a?deleteLog(s,t.logId):"save_teacher"===a?upsertTeacher(s,t.data):"delete_teacher"===a?deleteTeacher(s,t.teacherId):"save_pin"===a?writeSetting(s,"adminPin",String(t.pin).trim()):"save_settings"===a?writeSetting(s,"settings",JSON.stringify(t.settings)):"save_slip_settings"===a?writeSetting(s,"slipSettings",JSON.stringify(t.slipSettings)):"save_overrides"===a?writeSetting(s,"salaryOverrides",JSON.stringify(t.overrides)):"sync_all"===a&&syncAllData(s,t.data);return ContentService.createTextOutput(JSON.stringify({status:"success",action:a})).setMimeType(ContentService.MimeType.JSON)}catch(r){return ContentService.createTextOutput(JSON.stringify({status:"error",message:r.toString()})).setMimeType(ContentService.MimeType.JSON)}}function ensureStructure(e){var t=e.getSheetByName("Presensi");t||((t=e.insertSheet("Presensi")).appendRow(["ID Log","Tanggal","Jam","Nama Pengajar","ID Pengajar","Status Kehadiran","Keterangan","Waktu Tercatat"]),t.getRange(1,1,1,8).setFontWeight("bold").setBackground("#065f46").setFontColor("#ffffff"),t.setFrozenRows(1));var r=e.getSheetByName("Data_Pengajar");r||((r=e.insertSheet("Data_Pengajar")).appendRow(["ID Pengajar","Nama Lengkap Ustadz/Ustadzah","Halaqah / Tugas","No. WhatsApp","Status"]),r.getRange(1,1,1,5).setFontWeight("bold").setBackground("#1d4ed8").setFontColor("#ffffff"),r.setFrozenRows(1),[["tch-1","Ustadz Muhammad Fikri Haekal, C.LQ","Kelas Tahfizh Menengah Ikhwan","082189480869","Aktif"],["tch-2","Ustadzah Ummu Khadijah","Kelas Tahfizh Dasar Ikhwan & Akhowat","082339495396","Aktif"],["tch-3","Ustadzah A. Lulu Aprilia Latifa","Kelas Tahfizh Menengah Akhowat","087722442651","Aktif"],["tch-4","Ustadzah Khirfatul jannah","Kelas Tahfizh Dasar Ikhwan","089654707922","Aktif"]].forEach(function(e){r.appendRow(e)}));var n=e.getSheetByName("Pengaturan");n||((n=e.insertSheet("Pengaturan")).appendRow(["Kunci","Nilai"]),n.getRange(1,1,1,2).setFontWeight("bold").setBackground("#334155").setFontColor("#ffffff"),n.setFrozenRows(1),n.appendRow(["adminPin","1234"]))}function readLogs(e){var t=e.getSheetByName("Presensi");if(!t)return[];var r=t.getDataRange().getValues();if(r.length<=1)return[];for(var n=[],a=1;a<r.length;a++){var g=r[a];(g[0]||g[3])&&n.push({id:String(g[0]||"log-"+a),date:String(g[1]||""),time:String(g[2]||""),teacherName:String(g[3]||""),teacherId:String(g[4]||""),type:String(g[5]||"Hadir"),note:String(g[6]||"")})}return n}function readTeachers(e){var t=e.getSheetByName("Data_Pengajar");if(!t)return[];var r=t.getDataRange().getValues();if(r.length<=1)return[];for(var n=[],a=1;a<r.length;a++){var g=r[a];(g[0]||g[1])&&n.push({id:String(g[0]||"tch-"+a),name:String(g[1]||""),halaqah:String(g[2]||""),phone:String(g[3]||""),status:String(g[4]||"Aktif")})}return n}function readSettings(e){var t=e.getSheetByName("Pengaturan");if(!t)return{adminPin:"1234"};for(var r=t.getDataRange().getValues(),n={adminPin:"1234"},a=1;a<r.length;a++){var g=String(r[a][0]).trim(),s=String(r[a][1]).trim();"adminPin"===g?n.adminPin=s||"1234":"settings"===g?n.settings=JSON.parse(s):"slipSettings"===g?n.slipSettings=JSON.parse(s):"salaryOverrides"===g&&(n.salaryOverrides=JSON.parse(s))}return n}function appendLog(e,t){var r=e.getSheetByName("Presensi");if(r){var n=t.id||"log-"+Date.now();r.appendRow([n,t.date||"",t.time||"",t.teacherName||"",t.teacherId||"",t.type||"Hadir",t.note||"",new Date().toLocaleString("id-ID")])}}function deleteLog(e,t){var r=e.getSheetByName("Presensi");if(r&&t)for(var n=r.getDataRange().getValues(),a=1;a<n.length;a++)if(String(n[a][0])===String(t)){r.deleteRow(a+1);return}}function upsertTeacher(e,t){var r=e.getSheetByName("Data_Pengajar");if(r&&t){for(var n=r.getDataRange().getValues(),a=t.id||"tch-"+Date.now(),g=1;g<n.length;g++)if(String(n[g][0])===String(a)){r.getRange(g+1,2).setValue(t.name||""),r.getRange(g+1,3).setValue(t.halaqah||""),r.getRange(g+1,4).setValue(t.phone||""),r.getRange(g+1,5).setValue(t.status||"Aktif");return}r.appendRow([a,t.name||"",t.halaqah||"",t.phone||"",t.status||"Aktif"])}}function deleteTeacher(e,t){var r=e.getSheetByName("Data_Pengajar");if(r&&t)for(var n=r.getDataRange().getValues(),a=1;a<n.length;a++)if(String(n[a][0])===String(t)){r.deleteRow(a+1);return}}function writeSetting(e,t,r){var n=e.getSheetByName("Pengaturan");if(n){for(var a=n.getDataRange().getValues(),g=1;g<a.length;g++)if(String(a[g][0])===String(t)){n.getRange(g+1,2).setValue(r);return}n.appendRow([t,r])}}function syncAllData(e,t){if(t.adminPin&&writeSetting(e,"adminPin",String(t.adminPin).trim()),t.settings&&writeSetting(e,"settings",JSON.stringify(t.settings)),t.slipSettings&&writeSetting(e,"slipSettings",JSON.stringify(t.slipSettings)),t.salaryOverrides&&writeSetting(e,"salaryOverrides",JSON.stringify(t.salaryOverrides)),Array.isArray(t.teachers)&&t.teachers.forEach(function(t){upsertTeacher(e,t)}),Array.isArray(t.logs)){var r=readLogs(e),n=new Set(r.map(function(e){return e.id}));t.logs.forEach(function(t){n.has(t.id)||appendLog(e,t)})}}`;
+  const scriptCode = `function doGet(e){try{var s=SpreadsheetApp.getActiveSpreadsheet();ensureStructure(s);return ContentService.createTextOutput(JSON.stringify({status:"success",teachers:readTeachers(s),logs:readLogs(s),settings:readSettings(s).settings||{},slipSettings:readSettings(s).slipSettings||{},adminPin:readSettings(s).adminPin||"1234",salaryOverrides:readSettings(s).salaryOverrides||{}})).setMimeType(ContentService.MimeType.JSON)}catch(r){return ContentService.createTextOutput(JSON.stringify({status:"error",message:r.toString()})).setMimeType(ContentService.MimeType.JSON)}}function doPost(e){try{var s=SpreadsheetApp.getActiveSpreadsheet();ensureStructure(s);var t={};e&&e.postData&&e.postData.contents?t=JSON.parse(e.postData.contents):t=e.parameter||{};var a=t.action;"record_attendance"===a?appendLog(s,t.data):"delete_log"===a?deleteLog(s,t.logId):"save_teacher"===a?upsertTeacher(s,t.data):"delete_teacher"===a?deleteTeacher(s,t.teacherId):"save_pin"===a?writeSetting(s,"adminPin",String(t.pin).trim()):"save_settings"===a?writeSetting(s,"settings",JSON.stringify(t.settings)):"save_slip_settings"===a?writeSetting(s,"slipSettings",JSON.stringify(t.slipSettings)):"save_overrides"===a?writeSetting(s,"salaryOverrides",JSON.stringify(t.overrides)):"sync_all"===a&&syncAllData(s,t.data);return ContentService.createTextOutput(JSON.stringify({status:"success",action:a})).setMimeType(ContentService.MimeType.JSON)}catch(r){return ContentService.createTextOutput(JSON.stringify({status:"error",message:r.toString()})).setMimeType(ContentService.MimeType.JSON)}}function ensureStructure(e){var t=e.getSheetByName("Presensi");t||((t=e.insertSheet("Presensi")).appendRow(["ID Log","Tanggal","Jam","Nama Pengajar","ID Pengajar","Status Kehadiran","Keterangan","Waktu Tercatat"]),t.getRange(1,1,1,8).setFontWeight("bold").setBackground("#065f46").setFontColor("#ffffff"),t.setFrozenRows(1));var r=e.getSheetByName("Data_Pengajar");r||((r=e.insertSheet("Data_Pengajar")).appendRow(["ID Pengajar","Nama Lengkap Ustadz/Ustadzah","Halaqah / Tugas","No. WhatsApp","Status"]),r.getRange(1,1,1,5).setFontWeight("bold").setBackground("#1d4ed8").setFontColor("#ffffff"),r.setFrozenRows(1),[["tch-1","Ustadz Muhammad Fikri Haekal, C.LQ","Kelas Tahfizh Menengah Ikhwan","082189480869","Aktif"],["tch-2","Ustadzah Ummu Khadijah","Kelas Tahfizh Dasar Ikhwan & Akhowat","082339495396","Aktif"],["tch-3","Ustadzah A. Lulu Aprilia Latifa","Kelas Tahfizh Menengah Akhowat","087722442651","Aktif"],["tch-4","Ustadzah Khirfatul jannah","Kelas Tahfizh Dasar Ikhwan","089654707922","Aktif"]].forEach(function(e){r.appendRow(e)}));var n=e.getSheetByName("Pengaturan");n||((n=e.insertSheet("Pengaturan")).appendRow(["Kunci","Nilai"]),n.getRange(1,1,1,2).setFontWeight("bold").setBackground("#334155").setFontColor("#ffffff"),n.setFrozenRows(1),n.appendRow(["adminPin","1234"]))}function readLogs(e){var t=e.getSheetByName("Presensi");if(!t)return[];var r=t.getDataRange().getValues();if(r.length<=1)return[];for(var n=[],a=1;a<r.length;a++){var g=r[a];if(g[0]||g[3]){var d="",i=g[1];if(i instanceof Date){var y=i.getFullYear(),m=String(i.getMonth()+1).padStart(2,"0"),p=String(i.getDate()).padStart(2,"0");d=y+"-"+m+"-"+p}else d=String(i||"").replace(/^'/,"");var u="",c=g[2];if(c instanceof Date){var h=String(c.getHours()).padStart(2,"0"),f=String(c.getMinutes()).padStart(2,"0");u=h+":"+f}else u=String(c||"").replace(/^'/,"");n.push({id:String(g[0]||"log-"+a),date:d,time:u,teacherName:String(g[3]||""),teacherId:String(g[4]||""),type:String(g[5]||"Hadir"),note:String(g[6]||"")})}}return n}function readTeachers(e){var t=e.getSheetByName("Data_Pengajar");if(!t)return[];var r=t.getDataRange().getValues();if(r.length<=1)return[];for(var n=[],a=1;a<r.length;a++){var g=r[a];(g[0]||g[1])&&n.push({id:String(g[0]||"tch-"+a),name:String(g[1]||""),halaqah:String(g[2]||""),phone:String(g[3]||""),status:String(g[4]||"Aktif")})}return n}function readSettings(e){var t=e.getSheetByName("Pengaturan");if(!t)return{adminPin:"1234"};for(var r=t.getDataRange().getValues(),n={adminPin:"1234"},a=1;a<r.length;a++){var g=String(r[a][0]).trim(),s=String(r[a][1]).trim();"adminPin"===g?n.adminPin=s||"1234":"settings"===g?n.settings=JSON.parse(s):"slipSettings"===g?n.slipSettings=JSON.parse(s):"salaryOverrides"===g&&(n.salaryOverrides=JSON.parse(s))}return n}function appendLog(e,t){var r=e.getSheetByName("Presensi");if(r){var n=t.id||"log-"+Date.now(),d="'"+(t.date||""),i="'"+(t.time||"");r.appendRow([n,d,i,t.teacherName||"",t.teacherId||"",t.type||"Hadir",t.note||"",new Date().toLocaleString("id-ID")])}}function deleteLog(e,t){var r=e.getSheetByName("Presensi");if(r&&t)for(var n=r.getDataRange().getValues(),a=1;a<n.length;a++)if(String(n[a][0])===String(t)){r.deleteRow(a+1);return}}function upsertTeacher(e,t){var r=e.getSheetByName("Data_Pengajar");if(r&&t){for(var n=r.getDataRange().getValues(),a=t.id||"tch-"+Date.now(),g=1;g<n.length;g++)if(String(n[g][0])===String(a)){r.getRange(g+1,2).setValue(t.name||""),r.getRange(g+1,3).setValue(t.halaqah||""),r.getRange(g+1,4).setValue(t.phone||""),r.getRange(g+1,5).setValue(t.status||"Aktif");return}r.appendRow([a,t.name||"",t.halaqah||"",t.phone||"",t.status||"Aktif"])}}function deleteTeacher(e,t){var r=e.getSheetByName("Data_Pengajar");if(r&&t)for(var n=r.getDataRange().getValues(),a=1;a<n.length;a++)if(String(n[a][0])===String(t)){r.deleteRow(a+1);return}}function writeSetting(e,t,r){var n=e.getSheetByName("Pengaturan");if(n){for(var a=n.getDataRange().getValues(),g=1;g<a.length;g++)if(String(a[g][0])===String(t)){n.getRange(g+1,2).setValue(r);return}n.appendRow([t,r])}}function syncAllData(e,t){if(t.adminPin&&writeSetting(e,"adminPin",String(t.adminPin).trim()),t.settings&&writeSetting(e,"settings",JSON.stringify(t.settings)),t.slipSettings&&writeSetting(e,"slipSettings",JSON.stringify(t.slipSettings)),t.salaryOverrides&&writeSetting(e,"salaryOverrides",JSON.stringify(t.salaryOverrides)),Array.isArray(t.teachers)&&t.teachers.forEach(function(t){upsertTeacher(e,t)}),Array.isArray(t.logs)){var r=readLogs(e),n=new Set(r.map(function(e){return e.id}));t.logs.forEach(function(t){n.has(t.id)||appendLog(e,t)})}}`;
 
   navigator.clipboard.writeText(scriptCode)
     .then(() => {
