@@ -1,5 +1,4 @@
-// Service Worker for Presensi Pengajar RQ Ummul Qasim
-const CACHE_NAME = 'rq-presensi-v20261012-fixdates';
+const CACHE_NAME = 'rq-presensi-v20261012-modern-icons';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',

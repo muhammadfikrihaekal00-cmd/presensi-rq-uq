@@ -456,6 +456,7 @@ function updateAdminUIState() {
   const authText = document.getElementById('adminAuthText');
   if (authBtn) {
     authBtn.classList.toggle('unlocked', isAdminUnlocked);
+    authBtn.setAttribute('title', isAdminUnlocked ? 'Mode Pengelola Aktif (Klik untuk Kunci)' : 'Kunci Pengelola (Klik untuk Buka PIN)');
   }
   if (authIcon) {
     authIcon.textContent = isAdminUnlocked ? '🔓' : '🔒';
@@ -470,16 +471,19 @@ function updateAdminUIState() {
   const badgeLockPengaturan = document.getElementById('badgeLockPengaturanDesktop');
   if (badgeLockPengaturan) badgeLockPengaturan.textContent = isAdminUnlocked ? '🔓' : '🔒';
 
-  // 3. Mobile Nav Labels
+  // 3. Mobile Nav Lock Badges
+  const mobBadgeInsentif = document.getElementById('mobBadgeLockInsentif');
+  if (mobBadgeInsentif) mobBadgeInsentif.textContent = isAdminUnlocked ? '🔓' : '🔒';
+  const mobBadgePengaturan = document.getElementById('mobBadgeLockPengaturan');
+  if (mobBadgePengaturan) mobBadgePengaturan.textContent = isAdminUnlocked ? '🔓' : '🔒';
+
   const mobNavInsentif = document.getElementById('mobNavInsentif');
   if (mobNavInsentif) {
-    const span = mobNavInsentif.querySelector('span');
-    if (span) span.textContent = isAdminUnlocked ? 'Gaji 🔓' : 'Gaji 🔒';
+    mobNavInsentif.setAttribute('title', isAdminUnlocked ? 'Insentif & Slip Gaji (Terbuka 🔓)' : 'Insentif & Slip Gaji (Terkunci 🔒)');
   }
   const mobNavPengaturan = document.getElementById('mobNavPengaturan');
   if (mobNavPengaturan) {
-    const span = mobNavPengaturan.querySelector('span');
-    if (span) span.textContent = isAdminUnlocked ? 'Kelola 🔓' : 'Kelola 🔒';
+    mobNavPengaturan.setAttribute('title', isAdminUnlocked ? 'Pengaturan & Kelola Guru (Terbuka 🔓)' : 'Pengaturan & Kelola Guru (Terkunci 🔒)');
   }
 
   // 4. Panel Pengaturan Visibility
@@ -1064,8 +1068,8 @@ function loadRecapData() {
         <span class="rate-badge ${rateClass}">${rate}%</span>
       </td>
       <td class="text-center action-col">
-        <button class="btn-table-action" onclick="viewTeacherMonthDetail('${teacher.id}', ${selectedMonth}, ${selectedYear})" title="Rincian Kehadiran">
-          🔍 Rincian
+        <button class="btn-table-action btn-icon-action" onclick="viewTeacherMonthDetail('${teacher.id}', ${selectedMonth}, ${selectedYear})" title="Rincian Kehadiran ${escapeHtml(teacher.name)}">
+          🔍
         </button>
       </td>
     `;
@@ -1093,8 +1097,8 @@ function loadRecapData() {
           <div class="rc-progress-bar-wrap">
             <div class="rc-progress-bar" style="width: ${rate}%;"></div>
           </div>
-          <button class="btn-table-action" onclick="viewTeacherMonthDetail('${teacher.id}', ${selectedMonth}, ${selectedYear})" title="Rincian Kehadiran">
-            🔍 Rincian
+          <button class="btn-table-action btn-icon-action" onclick="viewTeacherMonthDetail('${teacher.id}', ${selectedMonth}, ${selectedYear})" title="Rincian Kehadiran ${escapeHtml(teacher.name)}">
+            🔍
           </button>
         </div>
       `;
@@ -1331,14 +1335,14 @@ function loadSalaryData() {
       </td>
       <td class="text-center">
         <div style="display:flex; gap:6px; justify-content:center;">
-          <button class="btn-action-slip" onclick="viewSlipPreview('${teacher.id}')" title="Lihat & Unduh Slip">
-            👁️ Slip
+          <button class="btn-action-slip btn-icon-action" onclick="viewSlipPreview('${teacher.id}')" title="Lihat & Unduh Slip Gaji ${escapeHtml(teacher.name)}">
+            👁️
           </button>
-          <button class="btn-action-wa" onclick="sendSlipDirectViaWa('${teacher.id}')" title="Kirim Slip ke WhatsApp">
-            💬 WA
+          <button class="btn-action-wa btn-icon-action" onclick="sendSlipDirectViaWa('${teacher.id}')" title="Kirim Slip ke WhatsApp ${escapeHtml(teacher.name)}">
+            💬
           </button>
-          <button class="btn-action-edit-sal" onclick="openEditTeacherSalaryModal('${teacher.id}')" title="Sesuaikan Nominal">
-            ✏️ Edit
+          <button class="btn-action-edit-sal btn-icon-action" onclick="openEditTeacherSalaryModal('${teacher.id}')" title="Sesuaikan Nominal Khusus ${escapeHtml(teacher.name)}">
+            ✏️
           </button>
         </div>
       </td>
@@ -1387,14 +1391,14 @@ function loadSalaryData() {
         </div>
 
         <div class="sal-card-actions">
-          <button class="btn-action-edit-sal" onclick="openEditTeacherSalaryModal('${teacher.id}')" title="Sesuaikan Nominal">
-            ✏️ Edit
+          <button class="btn-action-edit-sal btn-icon-action" onclick="openEditTeacherSalaryModal('${teacher.id}')" title="Sesuaikan Nominal Khusus">
+            ✏️
           </button>
-          <button class="btn-action-slip" onclick="viewSlipPreview('${teacher.id}')" title="Lihat & Unduh Slip">
-            👁️ Slip
+          <button class="btn-action-slip btn-icon-action" onclick="viewSlipPreview('${teacher.id}')" title="Lihat & Unduh Slip Gaji">
+            👁️
           </button>
-          <button class="btn-action-wa" onclick="sendSlipDirectViaWa('${teacher.id}')" title="Kirim ke WhatsApp">
-            💬 WA
+          <button class="btn-action-wa btn-icon-action" onclick="sendSlipDirectViaWa('${teacher.id}')" title="Kirim Slip ke WhatsApp">
+            💬
           </button>
         </div>
       `;
@@ -2156,8 +2160,8 @@ function renderTeachersManageTable() {
       </td>
       <td class="text-center action-buttons-cell">
         ${isAdminUnlocked ? `
-          <button class="btn-edit-small" onclick="openEditTeacherModal('${t.id}')">✏️ Edit</button>
-          <button class="btn-delete-small" onclick="deleteTeacher('${t.id}')">🗑️ Hapus</button>
+          <button class="btn-edit-small btn-icon-action" onclick="openEditTeacherModal('${t.id}')" title="Edit Data ${escapeHtml(t.name)}">✏️</button>
+          <button class="btn-delete-small btn-icon-action" onclick="deleteTeacher('${t.id}')" title="Hapus Data ${escapeHtml(t.name)}">🗑️</button>
         ` : `
           <button class="badge-admin-locked" onclick="openAdminPinModal('pengaturan')" title="Perlu PIN Pengelola untuk mengedit guru">
             🔒 Khusus Pengelola
@@ -2833,6 +2837,7 @@ function updateSheetsStatusUI(status, url, detail) {
 
   if (status === 'online') {
     btnHeader.classList.add('status-online');
+    btnHeader.setAttribute('title', 'Google Spreadsheet: Terhubung (Online)');
     if (statusText) statusText.textContent = 'Spreadsheet: Terhubung';
     if (cardBadge) {
       cardBadge.className = 'cloud-badge-indicator badge-online';
@@ -2847,6 +2852,7 @@ function updateSheetsStatusUI(status, url, detail) {
     }
   } else if (status === 'connecting') {
     btnHeader.classList.add('status-connecting');
+    btnHeader.setAttribute('title', 'Google Spreadsheet: Sedang Menghubungkan...');
     if (statusText) statusText.textContent = 'Menghubungkan...';
     if (cardBadge) {
       cardBadge.className = 'cloud-badge-indicator badge-offline';
@@ -2856,6 +2862,7 @@ function updateSheetsStatusUI(status, url, detail) {
     if (modalStatus) modalStatus.innerHTML = '<span style="color:#f59e0b;">🟡 Sedang Menghubungkan...</span>';
   } else if (status === 'error') {
     btnHeader.classList.add('status-error');
+    btnHeader.setAttribute('title', `Google Spreadsheet: Gagal (${detail || 'Periksa URL'})`);
     if (statusText) statusText.textContent = 'Spreadsheet: Gagal';
     if (cardBadge) {
       cardBadge.className = 'cloud-badge-indicator badge-offline';
@@ -2866,6 +2873,7 @@ function updateSheetsStatusUI(status, url, detail) {
   } else {
     // Unconfigured
     btnHeader.classList.add('status-offline');
+    btnHeader.setAttribute('title', 'Google Spreadsheet: Belum Dikonfigurasi (Mode Lokal)');
     if (statusText) statusText.textContent = 'Spreadsheet: Belum';
     if (cardBadge) {
       cardBadge.className = 'cloud-badge-indicator badge-offline';
