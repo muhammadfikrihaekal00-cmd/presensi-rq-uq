@@ -1,0 +1,20 @@
+{
+  "name": "Presensi Pengajar - RQ Ummul Qasim",
+  "short_name": "Presensi RQ",
+  "description": "Sistem Presensi Praktis Pengajar dan Rekapitulasi Kehadiran Otomatis RQ Ummul Qasim",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#065f46",
+  "theme_color": "#065f46",
+  "orientation": "portrait-primary",
+  "lang": "id",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

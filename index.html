@@ -1,0 +1,1315 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="emerald">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Presensi & Insentif Pengajar - RQ Ummul Qasim</title>
+  <meta name="description" content="Sistem Presensi, Rekapitulasi Insentif & Pengiriman Otomatis Slip Gaji Pengajar RQ Ummul Qasim">
+  
+  <!-- PWA & Mobile Web App Meta -->
+  <meta name="theme-color" content="#065f46" id="themeColorMeta">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Presensi RQ">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/svg+xml" href="icon.svg">
+  <link rel="apple-touch-icon" href="icon.svg">
+
+  <!-- Fonts & Styles -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Amiri:wght@700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body id="bodyRoot">
+
+  <!-- App Container -->
+  <div id="app" class="app-wrapper">
+    
+    <!-- Phone Notch for Simulated HP Mode on Windows -->
+    <div class="phone-top-notch"></div>
+
+    <!-- Top Utility Bar (Windows Desktop & Theme & PWA Controls) -->
+    <div class="top-utility-bar">
+      <!-- Mode Tampilan Switcher -->
+      <div class="view-mode-toggle-group">
+        <button id="btnViewDesktop" class="view-toggle-btn active" onclick="setViewMode('windows')" title="Tampilan Komputer / Windows">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          <span>Windows</span>
+        </button>
+        <button id="btnViewMobile" class="view-toggle-btn" onclick="setViewMode('hp')" title="Tampilan Ponsel / HP Pengajar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="3"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+          <span>Mode HP</span>
+        </button>
+      </div>
+
+      <!-- Theme Switcher & Install PWA Button -->
+      <div class="utility-actions-right">
+        <div class="theme-selector-wrapper">
+          <label for="themeSelectDropdown" class="theme-label">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M1 12h2M21 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"/></svg>
+            <span>Tema:</span>
+          </label>
+          <select id="themeSelectDropdown" class="theme-select" onchange="changeTheme(this.value)">
+            <option value="emerald">🌿 Zamrud Islami (Default)</option>
+            <option value="dark">🌙 Mode Gelap (Dark OLED)</option>
+            <option value="ocean">🌊 Samudra Biru (Ocean)</option>
+            <option value="gold">🏜️ Kasturi Emas (Desert Gold)</option>
+            <option value="purple">🍇 Amethyst Ungu (Royal)</option>
+          </select>
+        </div>
+
+        <button id="btnAdminAuthHeader" class="btn-admin-auth" onclick="toggleAdminAuth()" title="Masuk atau Kunci Mode Pengelola">
+          <span id="adminAuthIcon">🔒</span>
+          <span id="adminAuthText">Mode Pengajar (Masuk Pengelola)</span>
+        </button>
+
+        <button class="btn-install-pwa" onclick="openInstallModal()" title="Pasang aplikasi di layar utama HP">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          <span>Pasang di HP (APK)</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Header -->
+    <header class="app-header">
+      <div class="header-container">
+        <div class="brand-section">
+          <div class="logo-circle">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="quran-icon">
+              <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"></path>
+              <path d="M6 6h10"></path>
+              <path d="M6 10h10"></path>
+              <path d="M6 14h6"></path>
+            </svg>
+          </div>
+          <div>
+            <h1 class="institution-name" id="institutionDisplay">RQ Ummul Qasim</h1>
+            <p class="tagline">Sistem Presensi & Insentif Pengajar</p>
+          </div>
+        </div>
+        <div class="live-clock-badge">
+          <span class="clock-dot"></span>
+          <span id="currentDateBadge">Memuat tanggal...</span>
+          <span class="divider-clock">|</span>
+          <strong id="liveClock">00:00:00</strong>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs (Desktop & Tablet) -->
+      <nav class="nav-tabs" role="tablist">
+        <button class="tab-btn active" id="tabAbsensiBtn" onclick="switchTab('absensi')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"></path><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
+          <span>Absen Hari Ini</span>
+        </button>
+        <button class="tab-btn" id="tabRekapBtn" onclick="switchTab('rekap')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+          <span>Rekap Kehadiran</span>
+        </button>
+        <button class="tab-btn" id="tabInsentifBtn" onclick="openInsentifTab()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          <span>Insentif & Slip Gaji</span>
+          <span class="badge-lock" id="badgeLockDesktop">🔒</span>
+        </button>
+        <button class="tab-btn" id="tabPengaturanBtn" onclick="openPengaturanTab()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+          <span>Kelola Guru & Pengaturan</span>
+          <span class="badge-lock" id="badgeLockPengaturanDesktop">🔒</span>
+        </button>
+      </nav>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      
+      <!-- ============================================== -->
+      <!-- TAB 1: ABSENSI HARI INI (SISI PENGAJAR)       -->
+      <!-- ============================================== -->
+      <section id="panelAbsensi" class="tab-panel active-panel">
+        
+        <!-- Kartu Utama Presensi Mandiri Cepat -->
+        <div class="hero-card">
+          <div class="hero-badge">Bismillah • Presensi Mengajar</div>
+          <h2 class="hero-title">Klik Kehadiran Hari Ini</h2>
+          <p class="hero-subtitle">Silakan sentuh/pilih nama Anda, lalu klik tombol hadir di bawah ini.</p>
+
+          <!-- Form Pemilihan Guru & Aksi -->
+          <div class="attendance-control-box">
+            <div class="form-group select-teacher-group">
+              <label for="selectTeacherAttendance" class="label-heading">Pilih Nama Ustadz / Ustadzah:</label>
+              <div class="custom-select-wrapper">
+                <select id="selectTeacherAttendance" class="form-select" onchange="onSelectedTeacherChange()">
+                  <option value="">-- Sentuh untuk memilih nama Anda --</option>
+                  <!-- Populated dynamically -->
+                </select>
+              </div>
+            </div>
+
+            <!-- Sentuh Cepat Nama Guru (Khusus Pengguna HP) -->
+            <div class="quick-teacher-touch-section">
+              <div class="quick-touch-header">
+                <span class="quick-touch-title">📱 Sentuh Cepat Nama Guru:</span>
+                <input type="text" id="quickTeacherSearch" class="quick-search-input" placeholder="🔍 Cari nama..." oninput="filterTeacherQuickChips(this.value)">
+              </div>
+              <div class="teacher-chips-container" id="teacherQuickChipsContainer">
+                <!-- Dynamically populated cards with Avatar, Name, and Status -->
+              </div>
+            </div>
+
+            <!-- Dynamic Status Preview Box -->
+            <div id="teacherStatusBanner" class="status-banner banner-neutral">
+              <div class="banner-icon" id="bannerIcon">ℹ️</div>
+              <div class="banner-text">
+                <strong id="bannerTitle">Pilih nama pengajar terlebih dahulu</strong>
+                <span id="bannerSubtitle">Status kehadiran Anda hari ini akan tampil di sini</span>
+              </div>
+            </div>
+
+            <!-- Tombol Aksi Utama -->
+            <div class="attendance-action-buttons">
+              <button id="btnCheckIn" class="btn-primary-action btn-attendance" onclick="recordAttendance('Hadir')" disabled>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                <span>Hadir Sekarang</span>
+              </button>
+
+              <button id="btnIzin" class="btn-secondary-action btn-permit" onclick="openIzinModal()" disabled>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                <span>Izin / Sakit</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Ringkasan Cepat Monitor Hari Ini -->
+        <div class="daily-monitor-section">
+          <div class="section-header">
+            <div>
+              <h3 class="section-title">Status Seluruh Guru Hari Ini</h3>
+              <p class="section-desc" id="todaySummaryCount">Menampilkan daftar hadir tanggal hari ini</p>
+            </div>
+            <div class="stats-pills-row">
+              <div class="stat-pill pill-success">
+                <span class="pill-label">Hadir:</span>
+                <strong id="todayHadirCount">0</strong>
+              </div>
+              <div class="stat-pill pill-warning">
+                <span class="pill-label">Izin/Sakit:</span>
+                <strong id="todayIzinCount">0</strong>
+              </div>
+              <div class="stat-pill pill-muted">
+                <span class="pill-label">Belum Absen:</span>
+                <strong id="todayBelumCount">0</strong>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick List Cards -->
+          <div class="teachers-grid" id="todayTeachersGrid">
+            <!-- Populated via JavaScript -->
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ============================================== -->
+      <!-- TAB 2: REKAPITULASI KEHADIRAN (SISI PENGURUS) -->
+      <!-- ============================================== -->
+      <section id="panelRekap" class="tab-panel">
+        
+        <div class="card-recap-header">
+          <div class="recap-title-area">
+            <h2>Rekapitulasi Kehadiran Otomatis</h2>
+            <p>Data otomatis dihitung dari klik harian setiap pengajar. Tanpa perlu rekap manual lagi.</p>
+          </div>
+          
+          <div class="recap-filter-bar">
+            <div class="filter-item">
+              <label for="filterBulan">Bulan:</label>
+              <select id="filterBulan" class="form-select-sm" onchange="loadRecapData(); if(isAdminUnlocked) loadSalaryData();">
+                <option value="1">Januari</option>
+                <option value="2">Februari</option>
+                <option value="3">Maret</option>
+                <option value="4">April</option>
+                <option value="5">Mei</option>
+                <option value="6">Juni</option>
+                <option value="7">Juli</option>
+                <option value="8">Agustus</option>
+                <option value="9">September</option>
+                <option value="10">Oktober</option>
+                <option value="11">November</option>
+                <option value="12">Desember</option>
+              </select>
+            </div>
+            <div class="filter-item">
+              <label for="filterTahun">Tahun:</label>
+              <select id="filterTahun" class="form-select-sm" onchange="loadRecapData(); if(isAdminUnlocked) loadSalaryData();">
+                <option value="2025">2025</option>
+                <option value="2026" selected>2026</option>
+                <option value="2027">2027</option>
+              </select>
+            </div>
+            <div class="export-actions">
+              <button class="btn-export-excel" onclick="exportToExcel()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                <span>Unduh Excel / CSV</span>
+              </button>
+              <button class="btn-print" onclick="window.print()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+                <span>Cetak</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Summary Metric Cards -->
+        <div class="metric-cards-grid">
+          <div class="metric-card card-green">
+            <div class="metric-icon">✓</div>
+            <div class="metric-data">
+              <span class="metric-number" id="metricTotalHadir">0</span>
+              <span class="metric-label">Total Kehadiran Bulan Ini</span>
+            </div>
+          </div>
+          <div class="metric-card card-amber">
+            <div class="metric-icon">⚠️</div>
+            <div class="metric-data">
+              <span class="metric-number" id="metricTotalIzin">0</span>
+              <span class="metric-label">Total Izin & Sakit</span>
+            </div>
+          </div>
+          <div class="metric-card card-blue">
+            <div class="metric-icon">👥</div>
+            <div class="metric-data">
+              <span class="metric-number" id="metricActiveTeachers">0</span>
+              <span class="metric-label">Jumlah Pengajar Aktif</span>
+            </div>
+          </div>
+          <div class="metric-card card-purple">
+            <div class="metric-icon">🎯</div>
+            <div class="metric-data">
+              <span class="metric-number" id="metricAvgRate">0%</span>
+              <span class="metric-label">Rata-rata Tingkat Kehadiran</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tabel Rekapitulasi Per Guru (Desktop / Windows View) -->
+        <div class="table-responsive-container">
+          <table class="data-table" id="recapTable">
+            <thead>
+              <tr>
+                <th style="width: 50px;">No</th>
+                <th>Nama Pengajar</th>
+                <th>Halaqah / Tugas</th>
+                <th class="text-center">Hadir</th>
+                <th class="text-center">Izin</th>
+                <th class="text-center">Sakit</th>
+                <th class="text-center">Total Sesi</th>
+                <th class="text-center">% Kehadiran</th>
+                <th class="text-center action-col">Detail</th>
+              </tr>
+            </thead>
+            <tbody id="recapTableBody">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Kartu Rekapitulasi Khusus HP (Mobile Cards View) -->
+        <div class="recap-cards-mobile" id="recapCardsMobile">
+          <!-- Dynamically populated for Mobile -->
+        </div>
+
+        <!-- Riwayat Log Lengkap -->
+        <div class="log-history-card">
+          <div class="log-header">
+            <h3>Riwayat Seluruh Catatan Presensi</h3>
+            <span class="log-count" id="logCountLabel">0 Catatan</span>
+          </div>
+          <div class="log-list" id="logListContainer">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ============================================== -->
+      <!-- TAB 3: INSENTIF & SLIP GAJI (KHUSUS PENGELOLA) -->
+      <!-- ============================================== -->
+      <section id="panelInsentif" class="tab-panel">
+        
+        <div class="insentif-top-banner">
+          <div class="insentif-title-row">
+            <div>
+              <h2 style="font-size: 1.45rem; font-weight: 800; color: var(--text-primary); margin-bottom: 4px;">
+                💰 Perekapan Insentif & Slip Mukafa'ah
+              </h2>
+              <p style="color: var(--text-secondary); font-size: 0.88rem;">
+                Area Khusus Pengelola RQ • Penghitungan otomatis berbasis kehadiran, pengiriman slip via WhatsApp, & editor desain slip.
+              </p>
+            </div>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+              <button class="btn-designer-open" onclick="openSlipDesignerModal()">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                <span>Edit Desain & Tarif Slip</span>
+              </button>
+              <button class="btn-lock-admin" onclick="lockAdminSession()">
+                <span>🔒 Kunci Akses</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="insentif-actions-row">
+            <!-- Rate Summary Pill -->
+            <div class="rate-summary-pill">
+              <span>Tarif Aktif:</span>
+              <span>Pokok: <strong id="summaryRatePokok">Rp 500.000</strong></span>
+              <span>•</span>
+              <span>Per Hadir: <strong id="summaryRateHadir">Rp 35.000</strong></span>
+              <span>•</span>
+              <span>Bonus Hadir 100%: <strong id="summaryRateBonus">Rp 100.000</strong></span>
+            </div>
+
+            <!-- Export Salary Button -->
+            <button class="btn-export-excel" onclick="exportSalaryToExcel()">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              <span>Unduh Rekap Gaji (Excel)</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Salary Metrics -->
+        <div class="metric-cards-grid">
+          <div class="metric-card card-green">
+            <div class="metric-icon">💵</div>
+            <div class="metric-data">
+              <span class="metric-number" id="metricTotalBudget">Rp 0</span>
+              <span class="metric-label">Total Anggaran Insentif Bulan Ini</span>
+            </div>
+          </div>
+          <div class="metric-card card-blue">
+            <div class="metric-icon">👨‍🏫</div>
+            <div class="metric-data">
+              <span class="metric-number" id="metricSalaryTeacherCount">0</span>
+              <span class="metric-label">Pengajar Penerima Insentif</span>
+            </div>
+          </div>
+          <div class="metric-card card-amber">
+            <div class="metric-icon">📅</div>
+            <div class="metric-data">
+              <span class="metric-number" id="metricSalarySessionCount">0</span>
+              <span class="metric-label">Total Sesi Mengajar Terbayar</span>
+            </div>
+          </div>
+          <div class="metric-card card-purple">
+            <div class="metric-icon">📊</div>
+            <div class="metric-data">
+              <span class="metric-number" id="metricAvgSalary">Rp 0</span>
+              <span class="metric-label">Rata-rata Insentif per Guru</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Desktop Salary Table -->
+        <div class="table-salary-container table-responsive-container">
+          <table class="data-table" id="salaryTable">
+            <thead>
+              <tr>
+                <th style="width: 40px;">No</th>
+                <th>Nama Pengajar</th>
+                <th class="text-center">Hari Hadir</th>
+                <th class="text-center">Pokok</th>
+                <th class="text-center">Insentif Mengajar</th>
+                <th class="text-center">Tunjangan / Bonus</th>
+                <th class="text-center">Potongan</th>
+                <th class="text-center font-bold">Total Diterima</th>
+                <th class="text-center" style="width: 220px;">Aksi Slip & WA</th>
+              </tr>
+            </thead>
+            <tbody id="salaryTableBody">
+              <!-- Dynamically populated via loadSalaryData() -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Mobile Salary Cards -->
+        <div class="salary-cards-mobile" id="salaryCardsMobile">
+          <!-- Dynamically populated for Mobile -->
+        </div>
+
+      </section>
+
+      <!-- ============================================== -->
+      <!-- TAB 4: KELOLA GURU & PENGATURAN FITUR          -->
+      <!-- ============================================== -->
+      <section id="panelPengaturan" class="tab-panel">
+        
+        <!-- Layar Terkunci untuk Pengajar (Harus PIN Pengelola untuk Mengedit Guru) -->
+        <div id="pengaturanLockedOverlay" class="admin-locked-box" style="display: block;">
+          <div class="locked-icon-huge">🔒</div>
+          <h3 class="locked-box-title">Area Khusus Pengelola RQ</h3>
+          <p class="locked-box-desc">
+            Pendaftaran guru baru, perubahan nama, nomor WhatsApp pengajar, serta pengaturan lembaga dilindungi sandi pengelola demi menjaga keamanan data.<br><br>
+            Pengajar hanya dapat mengakses bagian nama, absensi harian, dan info rekapitulasi mengajar.
+          </p>
+          <div class="locked-box-actions">
+            <button class="btn-unlock-action" onclick="openAdminPinModal('pengaturan')">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              <span>Masukkan PIN Pengelola (Buka Akses)</span>
+            </button>
+            <button class="btn-secondary" onclick="switchTab('absensi')">
+              <span>← Kembali ke Absen</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Konten Pengaturan Terbuka (Hanya tampil jika isAdminUnlocked) -->
+        <div id="pengaturanUnlockedContent" style="display: none;">
+          
+          <!-- Banner Pengelola Aktif -->
+          <div class="admin-active-banner">
+            <div class="admin-active-info">
+              <span class="admin-active-icon">🔓</span>
+              <div>
+                <div class="admin-active-title">Akses Pengelola Terbuka Penuh</div>
+                <div class="admin-active-sub">Anda memiliki izin untuk menambah guru, mengedit data guru, mengubah nama lembaga, dan merekap gaji.</div>
+              </div>
+            </div>
+            <button class="btn-lock-session" onclick="lockAdminSession()">
+              🔒 Kunci Akses Pengelola
+            </button>
+          </div>
+
+          <div class="settings-grid">
+          
+          <!-- Bagian 1: Manajemen Data Guru (Tambah/Edit Nama Ustadz) -->
+          <div class="settings-card full-width">
+            <div class="card-top-action">
+              <div>
+                <h3 class="card-heading">Kelola Data Ustadz & Ustadzah</h3>
+                <p class="card-subheading">Tambah guru baru, ganti nama jika ada kesalahan eja, atau atur nomor WhatsApp untuk pengiriman slip gaji.</p>
+              </div>
+              <button class="btn-add-teacher" onclick="openAddTeacherModal()">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                <span>+ Tambah Guru Baru</span>
+              </button>
+            </div>
+
+            <!-- Tabel Daftar Guru -->
+            <div class="table-responsive-container mt-3">
+              <table class="data-table" id="teachersManageTable">
+                <thead>
+                  <tr>
+                    <th style="width: 50px;">No</th>
+                    <th>Nama Lengkap Ustadz/Ustadzah</th>
+                    <th>Halaqah / Sesi Mengajar</th>
+                    <th>No. WhatsApp (WA)</th>
+                    <th>Status</th>
+                    <th class="text-center" style="width: 140px;">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="teachersManageBody">
+                  <!-- Populated dynamically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Bagian 2: Tema Aplikasi & Pilihan Warna -->
+          <div class="settings-card">
+            <h3 class="card-heading">Pilihan Tema Warna Aplikasi</h3>
+            <p class="card-subheading">Pilih nuansa warna yang paling nyaman dan disukai.</p>
+            
+            <div class="theme-options-grid">
+              <!-- Emerald -->
+              <div class="theme-card-option" id="themeOptEmerald" onclick="changeTheme('emerald')">
+                <div class="theme-palette-dots">
+                  <span class="palette-dot" style="background: #065f46;"></span>
+                  <span class="palette-dot" style="background: #d97706;"></span>
+                  <span class="palette-dot" style="background: #ecfdf5;"></span>
+                </div>
+                <div class="theme-opt-title">Zamrud Islami</div>
+              </div>
+
+              <!-- Dark -->
+              <div class="theme-card-option" id="themeOptDark" onclick="changeTheme('dark')">
+                <div class="theme-palette-dots">
+                  <span class="palette-dot" style="background: #0b1120;"></span>
+                  <span class="palette-dot" style="background: #10b981;"></span>
+                  <span class="palette-dot" style="background: #1e293b;"></span>
+                </div>
+                <div class="theme-opt-title">Mode Gelap</div>
+              </div>
+
+              <!-- Ocean -->
+              <div class="theme-card-option" id="themeOptOcean" onclick="changeTheme('ocean')">
+                <div class="theme-palette-dots">
+                  <span class="palette-dot" style="background: #1d4ed8;"></span>
+                  <span class="palette-dot" style="background: #0284c7;"></span>
+                  <span class="palette-dot" style="background: #eff6ff;"></span>
+                </div>
+                <div class="theme-opt-title">Samudra Biru</div>
+              </div>
+
+              <!-- Gold -->
+              <div class="theme-card-option" id="themeOptGold" onclick="changeTheme('gold')">
+                <div class="theme-palette-dots">
+                  <span class="palette-dot" style="background: #b45309;"></span>
+                  <span class="palette-dot" style="background: #d97706;"></span>
+                  <span class="palette-dot" style="background: #fffbeb;"></span>
+                </div>
+                <div class="theme-opt-title">Kasturi Emas</div>
+              </div>
+
+              <!-- Purple -->
+              <div class="theme-card-option" id="themeOptPurple" onclick="changeTheme('purple')">
+                <div class="theme-palette-dots">
+                  <span class="palette-dot" style="background: #6d28d9;"></span>
+                  <span class="palette-dot" style="background: #f59e0b;"></span>
+                  <span class="palette-dot" style="background: #f5f3ff;"></span>
+                </div>
+                <div class="theme-opt-title">Amethyst Ungu</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bagian 3: Keamanan Akses Pengelola (PIN) -->
+          <div class="settings-card">
+            <h3 class="card-heading">Keamanan Akses Pengelola (PIN)</h3>
+            <p class="card-subheading">Fitur perhitungan insentif & slip gaji dilindungi PIN agar tidak dapat diakses oleh sembarang pihak.</p>
+            
+            <div style="background: var(--surface-muted); padding: 14px; border-radius: var(--radius-md); margin-top: 14px;">
+              <div style="font-size: 0.88rem; margin-bottom: 8px;">
+                Status Perlindungan: <strong>Aktif (Terproteksi PIN)</strong>
+              </div>
+              <div style="font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 12px;">
+                PIN bawaan awal adalah <code>1234</code>. Pengelola dapat menggantinya kapan saja.
+              </div>
+              <button class="btn-outline-action" onclick="openChangePinModal()">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                <span>Ubah PIN Pengelola</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Bagian 4: Pasang Aplikasi di HP (PWA/APK) -->
+          <div class="settings-card">
+            <h3 class="card-heading">Pasang Aplikasi di HP (APK)</h3>
+            <p class="card-subheading">Aplikasi ini dapat dipasang langsung di layar utama smartphone seluruh pengajar seperti aplikasi APK asli tanpa melalui Play Store.</p>
+            
+            <div class="backup-actions">
+              <button class="btn-outline-action" onclick="openInstallModal()">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="3"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+                <span>Lihat Panduan Pasang ke HP Seluruh Guru</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Bagian 5: Pengaturan Identitas Lembaga & Fitur -->
+          <div class="settings-card">
+            <h3 class="card-heading">Pengaturan Nama Lembaga</h3>
+            <p class="card-subheading">Sesuaikan nama Rumah Qur'an dan teks kop laporan.</p>
+            
+            <form id="formInstitutionSettings" onsubmit="saveInstitutionSettings(event)">
+              <div class="form-group">
+                <label for="inputInstitutionName">Nama Rumah Qur'an / Lembaga:*</label>
+                <input type="text" id="inputInstitutionName" class="form-control" value="RQ Ummul Qasim" required>
+              </div>
+
+              <div class="form-group">
+                <label for="inputTagline">Keterangan / Sub-judul:</label>
+                <input type="text" id="inputTagline" class="form-control" value="Sistem Presensi & Insentif Pengajar">
+              </div>
+
+              <div class="form-group">
+                <label for="inputMudirName">Nama Mudir / Pembina RQ:*</label>
+                <input type="text" id="inputMudirName" class="form-control" placeholder="Contoh: Ust. Pembina RQ, Lc" value="Ust. Pembina RQ" required>
+                <small style="color:var(--text-muted);font-size:0.75rem;">Nama ini otomatis tercantum sebagai penandatangan resmi pada slip gaji pengajar.</small>
+              </div>
+
+              <div class="form-group">
+                <label for="inputMudirTitle">Jabatan Pimpinan / Mudir:*</label>
+                <input type="text" id="inputMudirTitle" class="form-control" placeholder="Contoh: Mudir Rumah Qur'an / Pimpinan RQ" value="Mudir Rumah Qur'an" required>
+              </div>
+
+              <div class="form-group">
+                <label for="inputLokasi">Alamat / Cabang / Kota (Opsional):</label>
+                <input type="text" id="inputLokasi" class="form-control" placeholder="Contoh: Gedung Utama / Balikpapan">
+              </div>
+
+              <button type="submit" class="btn-save-settings">
+                Simpan Pengaturan Lembaga & Pimpinan
+              </button>
+            </form>
+          </div>
+
+          <!-- Bagian 6: Cadangan & Pengelolaan Data -->
+          <div class="settings-card">
+            <h3 class="card-heading">Cadangan Data (Backup & Reset)</h3>
+            <p class="card-subheading">Simpan cadangan data presensi & slip gaji ke komputer/HP Anda agar aman.</p>
+            
+            <div class="backup-actions">
+              <button class="btn-outline-action" onclick="backupDataJSON()">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                <span>Download Cadangan Data (JSON)</span>
+              </button>
+
+              <label class="btn-outline-action file-input-label">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                <span>Pulihkan Data dari File</span>
+                <input type="file" id="restoreFileInput" accept=".json" style="display:none;" onchange="restoreDataJSON(event)">
+              </label>
+
+              <button class="btn-danger-outline" onclick="confirmResetData()">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                <span>Reset ke Data Default</span>
+              </button>
+            </div>
+          </div>
+
+        </div>
+        </div> <!-- /#pengaturanUnlockedContent -->
+
+      </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+      <p>© <span id="footerYear">2026</span> <strong id="footerInstitutionName">RQ Ummul Qasim</strong> • Menata Kehadiran, Menjaga Amanah</p>
+    </footer>
+
+  </div>
+
+  <!-- ============================================== -->
+  <!-- MOBILE BOTTOM NAVIGATION (APP BAR KHUSUS HP)   -->
+  <!-- ============================================== -->
+  <nav class="mobile-bottom-nav" id="mobileBottomNav">
+    <button class="mobile-nav-btn active" id="mobNavAbsen" onclick="switchTab('absensi')">
+      <div class="mob-icon-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"></path><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
+      </div>
+      <span>Absen</span>
+    </button>
+    <button class="mobile-nav-btn" id="mobNavRekap" onclick="switchTab('rekap')">
+      <div class="mob-icon-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+      </div>
+      <span>Rekap</span>
+    </button>
+    <button class="mobile-nav-btn" id="mobNavInsentif" onclick="openInsentifTab()">
+      <div class="mob-icon-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+      </div>
+      <span>Gaji 🔒</span>
+    </button>
+    <button class="mobile-nav-btn" id="mobNavPengaturan" onclick="openPengaturanTab()">
+      <div class="mob-icon-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+      </div>
+      <span>Kelola 🔒</span>
+    </button>
+  </nav>
+
+  <!-- ============================================== -->
+  <!-- MODAL: PIN AKSES PENGELOLA (NUMERIC KEYPAD)   -->
+  <!-- ============================================== -->
+  <div id="modalAdminPin" class="modal-backdrop" style="display: none;">
+    <div class="modal-card pin-dialog-card">
+      <div class="modal-header">
+        <h3 style="font-size: 1.15rem;">🔒 Akses Khusus Pengelola</h3>
+        <button class="modal-close-btn" onclick="closeAdminPinModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-intro" id="adminPinIntroText" style="margin-bottom: 8px;">
+          Masukkan PIN Pengelola RQ untuk melihat rekapan insentif dan slip gaji pengajar.
+        </p>
+        <div style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 12px;">
+          (PIN Bawaan Awal: <strong>1234</strong>)
+        </div>
+
+        <div class="pin-display-wrapper">
+          <input type="password" id="inputPinEntered" class="pin-masked-input" maxlength="6" readonly placeholder="••••">
+        </div>
+
+        <!-- Phone-friendly Keypad -->
+        <div class="pin-keypad-grid">
+          <button class="pin-key-btn" onclick="pressPinKey('1')">1</button>
+          <button class="pin-key-btn" onclick="pressPinKey('2')">2</button>
+          <button class="pin-key-btn" onclick="pressPinKey('3')">3</button>
+          <button class="pin-key-btn" onclick="pressPinKey('4')">4</button>
+          <button class="pin-key-btn" onclick="pressPinKey('5')">5</button>
+          <button class="pin-key-btn" onclick="pressPinKey('6')">6</button>
+          <button class="pin-key-btn" onclick="pressPinKey('7')">7</button>
+          <button class="pin-key-btn" onclick="pressPinKey('8')">8</button>
+          <button class="pin-key-btn" onclick="pressPinKey('9')">9</button>
+          <button type="button" class="pin-key-btn action-btn" onclick="deletePinKey()" title="Hapus satu angka">⌫ Hapus</button>
+          <button type="button" class="pin-key-btn" onclick="pressPinKey('0')">0</button>
+          <button type="button" class="pin-key-btn enter-btn" onclick="submitAdminPin()">Masuk ↵</button>
+        </div>
+      </div>
+      <div class="modal-footer" style="justify-content: center;">
+        <button class="btn-secondary" onclick="closeAdminPinModal()">Batal</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================== -->
+  <!-- MODAL: DESAINER & PENGATURAN SLIP GAJI        -->
+  <!-- ============================================== -->
+  <div id="modalSlipDesigner" class="modal-backdrop" style="display: none;">
+    <div class="modal-card modal-large">
+      <div class="modal-header">
+        <h3>🎨 Desainer & Pengaturan Slip Gaji</h3>
+        <button class="modal-close-btn" onclick="closeSlipDesignerModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        
+        <!-- Tabs for Designer -->
+        <div class="designer-nav-tabs">
+          <button class="designer-tab-btn active" id="tabDsDesign" onclick="switchDesignerTab('design')">Desain & Gambar Logo</button>
+          <button class="designer-tab-btn" id="tabDsText" onclick="switchDesignerTab('text')">Teks & Kop Dokumen</button>
+          <button class="designer-tab-btn" id="tabDsRates" onclick="switchDesignerTab('rates')">Tarif & Pesan WA</button>
+        </div>
+
+        <form id="formSlipDesigner" onsubmit="saveSlipDesignerSettings(event)">
+          
+          <!-- Tab 1: Desain & Logo Gambar -->
+          <div id="paneDsDesign" class="designer-tab-pane active">
+            <h4 style="margin-bottom: 12px; font-size: 0.95rem;">Warna Aksen Desain Slip:</h4>
+            <div class="slip-theme-presets">
+              <div class="slip-theme-card active" id="stEmerald" onclick="selectSlipThemePreset('emerald')">
+                <div style="width: 24px; height: 24px; border-radius: 50%; background: #065f46; margin: 0 auto 6px;"></div>
+                <strong style="font-size: 0.8rem; display: block;">Zamrud Islami</strong>
+              </div>
+              <div class="slip-theme-card" id="stOcean" onclick="selectSlipThemePreset('ocean')">
+                <div style="width: 24px; height: 24px; border-radius: 50%; background: #1d4ed8; margin: 0 auto 6px;"></div>
+                <strong style="font-size: 0.8rem; display: block;">Samudra Biru</strong>
+              </div>
+              <div class="slip-theme-card" id="stGold" onclick="selectSlipThemePreset('gold')">
+                <div style="width: 24px; height: 24px; border-radius: 50%; background: #b45309; margin: 0 auto 6px;"></div>
+                <strong style="font-size: 0.8rem; display: block;">Kasturi Emas</strong>
+              </div>
+              <div class="slip-theme-card" id="stSlate" onclick="selectSlipThemePreset('slate')">
+                <div style="width: 24px; height: 24px; border-radius: 50%; background: #334155; margin: 0 auto 6px;"></div>
+                <strong style="font-size: 0.8rem; display: block;">Charcoal Formal</strong>
+              </div>
+            </div>
+
+            <h4 style="margin: 16px 0 8px; font-size: 0.95rem;">Gambar Logo / Stempel Slip Gaji:</h4>
+            <div class="logo-uploader-box">
+              <div class="current-logo-preview" id="currentLogoPreviewContainer">
+                <!-- Image or SVG logo -->
+                <svg viewBox="0 0 24 24" fill="none" stroke="#065f46" stroke-width="2" class="quran-icon" style="width: 32px; height: 32px;"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"></path><path d="M6 6h10"></path><path d="M6 10h10"></path></svg>
+              </div>
+              <div style="flex: 1;">
+                <label class="btn-outline-action" style="display: inline-flex; margin-bottom: 6px; cursor: pointer;">
+                  <span>📸 Unggah Logo Baru (PNG/JPG)</span>
+                  <input type="file" id="inputSlipLogoFile" accept="image/*" style="display:none;" onchange="handleLogoUpload(event)">
+                </label>
+                <button type="button" class="btn-delete-small" onclick="resetSlipLogoToDefault()" style="display: block; margin-top: 4px;">
+                  Gunakan Logo Al-Qur'an Bawaan
+                </button>
+                <div style="font-size: 0.76rem; color: var(--text-muted); margin-top: 4px;">
+                  Bisa menggunakan logo RQ, stempel resmi, atau lambang yayasan.
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tab 2: Teks & Kop Dokumen -->
+          <div id="paneDsText" class="designer-tab-pane">
+            <div class="form-group">
+              <label for="inputSlipTitle">Judul Dokumen Slip:</label>
+              <input type="text" id="inputSlipTitle" class="form-control" value="SLIP MUKAFA'AH & INSENTIF PENGAJAR" required>
+            </div>
+            <div class="form-group">
+              <label for="inputSlipOrgName">Nama Lembaga (Header):</label>
+              <input type="text" id="inputSlipOrgName" class="form-control" value="RUMAH QUR'AN UMMUL QASIM" required>
+            </div>
+            <div class="form-group">
+              <label for="inputSlipOrgTagline">Keterangan Lembaga (Sub-Header):</label>
+              <input type="text" id="inputSlipOrgTagline" class="form-control" value="Lembaga Pendidikan Al-Qur'an & Tahfidz">
+            </div>
+            <div class="form-group">
+              <label for="inputSlipOrgContact">Alamat & Nomor Kontak:</label>
+              <input type="text" id="inputSlipOrgContact" class="form-control" value="Kompleks RQ Ummul Qasim • WA: 0812-3456-7890">
+            </div>
+            <div class="form-group">
+              <label for="inputSlipFooterQuote">Doa / Pesan Penutup Slip:</label>
+              <textarea id="inputSlipFooterQuote" class="form-control" rows="2">Jazakumullahu khairan katsiran atas dedikasi dan keikhlasannya dalam membina santri penghafal Al-Qur'an. Semoga Allah senantiasa memberkahi rezeki dan meridhoi amal jariyah kita.</textarea>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+              <div class="form-group">
+                <label for="inputSlipSignerCity">Kota & Tanggal:</label>
+                <input type="text" id="inputSlipSignerCity" class="form-control" value="Balikpapan">
+              </div>
+              <div class="form-group">
+                <label for="inputSlipSignerName">Nama Penandatangan (Mudir):</label>
+                <input type="text" id="inputSlipSignerName" class="form-control" value="Ustadz Pembina RQ">
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="inputSlipSignerTitle">Jabatan Penandatangan:</label>
+              <input type="text" id="inputSlipSignerTitle" class="form-control" value="Mudir Rumah Qur'an">
+            </div>
+          </div>
+
+          <!-- Tab 3: Tarif & Pesan WA -->
+          <div id="paneDsRates" class="designer-tab-pane">
+            <div class="form-group">
+              <label for="inputBasePokok">Mukafa'ah / Honor Pokok (Rp):</label>
+              <input type="text" inputmode="numeric" id="inputBasePokok" class="form-control" value="500000" placeholder="Contoh: 500.000 atau 500000" required>
+            </div>
+            <div class="form-group">
+              <label for="inputRatePerHadir">Insentif Per Hari/Sesi Hadir (Rp):</label>
+              <input type="text" inputmode="numeric" id="inputRatePerHadir" class="form-control" value="35000" placeholder="Contoh: 43.750 atau 43750 atau 35000" required>
+              <small style="color:var(--text-muted);font-size:0.78rem;display:block;margin-top:4px;">
+                💡 Bebas menginput nominal ganjil maupun genap (contoh: <strong>43.750</strong>, <strong>43750</strong>, <strong>35.000</strong>). Titik ribuan otomatis diproses.
+              </small>
+            </div>
+            <div class="form-group">
+              <label for="inputBonusFull">Bonus Kehadiran Penuh (100%) (Rp):</label>
+              <input type="text" inputmode="numeric" id="inputBonusFull" class="form-control" value="100000" placeholder="Contoh: 100.000 atau 100000">
+            </div>
+            <div class="form-group">
+              <label for="inputLabelPokok">Label Komponen Pokok:</label>
+              <input type="text" id="inputLabelPokok" class="form-control" value="Mukafa'ah / Honor Pokok">
+            </div>
+            <div class="form-group">
+              <label for="inputLabelHadir">Label Komponen Kehadiran:</label>
+              <input type="text" id="inputLabelHadir" class="form-control" value="Insentif Mengajar Harian">
+            </div>
+            <div class="form-group">
+              <label for="inputLabelBonus">Label Komponen Bonus:</label>
+              <input type="text" id="inputLabelBonus" class="form-control" value="Tunjangan / Bonus Hadir Penuh">
+            </div>
+            <div class="form-group">
+              <label for="inputLabelPotongan">Label Komponen Potongan:</label>
+              <input type="text" id="inputLabelPotongan" class="form-control" value="Potongan Kas / Infaq">
+            </div>
+          </div>
+
+          <div class="modal-footer" style="padding: 16px 0 0; margin-top: 16px;">
+            <button type="button" class="btn-secondary" onclick="closeSlipDesignerModal()">Batal</button>
+            <button type="submit" class="btn-primary">Simpan Pengaturan Desain & Tarif</button>
+          </div>
+        </form>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================== -->
+  <!-- MODAL: PREVIEW SLIP GAJI & UNDUH GAMBAR (PNG) -->
+  <!-- ============================================== -->
+  <div id="modalSlipPreview" class="modal-backdrop" style="display: none;">
+    <div class="modal-card modal-large">
+      <div class="modal-header">
+        <h3 id="slipPreviewModalTitle">📄 Slip Mukafa'ah Pengajar</h3>
+        <button class="modal-close-btn" onclick="closeSlipPreviewModal()">✕</button>
+      </div>
+      <div class="modal-body" style="padding: 14px;">
+        
+        <div class="slip-preview-container">
+          <!-- Rendered Authentic Slip Paper -->
+          <div class="slip-paper" id="renderedSlipPaper">
+            
+            <div class="slip-paper-header">
+              <div class="slip-logo-element" id="slipPaperLogoWrap">
+                <!-- Dynamic Logo -->
+              </div>
+              <div class="slip-header-info">
+                <h2 id="slipPaperOrgName">RUMAH QUR'AN UMMUL QASIM</h2>
+                <p id="slipPaperOrgTagline">Lembaga Pendidikan Al-Qur'an & Tahfidz</p>
+                <p style="font-size:0.75rem; color:#64748b;" id="slipPaperOrgContact">Alamat & No. Kontak</p>
+              </div>
+            </div>
+
+            <div class="slip-badge-row">
+              <span class="slip-badge-title" id="slipPaperDocTitle">SLIP MUKAFA'AH & INSENTIF PENGAJAR</span>
+            </div>
+
+            <!-- Meta Data Grid -->
+            <div class="slip-meta-grid">
+              <div class="slip-meta-item">
+                <strong>Nama Pengajar:</strong> <span id="slipPaperTeacherName">-</span>
+              </div>
+              <div class="slip-meta-item">
+                <strong>Periode:</strong> <span id="slipPaperPeriod">-</span>
+              </div>
+              <div class="slip-meta-item">
+                <strong>Halaqah / Tugas:</strong> <span id="slipPaperHalaqah">-</span>
+              </div>
+              <div class="slip-meta-item">
+                <strong>No. WhatsApp:</strong> <span id="slipPaperPhone">-</span>
+              </div>
+            </div>
+
+            <!-- Attendance Mini Breakdown -->
+            <div style="background: #f1f5f9; padding: 6px 12px; border-radius: 6px; font-size: 0.8rem; margin-bottom: 12px; display: flex; justify-content: space-between;">
+              <span>Kehadiran: <strong id="slipPaperHadirCount">0</strong> Hari Hadir</span>
+              <span>Izin/Sakit: <strong id="slipPaperIzinCount">0</strong> Hari</span>
+              <span>Tingkat Hadir: <strong id="slipPaperRatePct">0%</strong></span>
+            </div>
+
+            <!-- Financial Table -->
+            <table class="slip-fin-table">
+              <thead>
+                <tr>
+                  <th style="width: 40px; text-align: center;">No</th>
+                  <th>Uraian Komponen Mukafa'ah</th>
+                  <th style="text-align: right; width: 140px;">Jumlah (Rp)</th>
+                </tr>
+              </thead>
+              <tbody id="slipPaperTableBody">
+                <!-- Injected dynamically -->
+              </tbody>
+              <tfoot>
+                <tr class="slip-total-highlight">
+                  <td colspan="2" style="text-align: right; padding-right: 14px;">TOTAL DITERIMA (TAKE HOME PAY):</td>
+                  <td style="text-align: right;" id="slipPaperGrandTotal">Rp 0</td>
+                </tr>
+              </tfoot>
+            </table>
+
+            <div class="slip-terbilang-banner">
+              Terbilang: <span id="slipPaperTerbilang">-</span>
+            </div>
+
+            <div class="slip-quote-box" id="slipPaperFooterQuote">
+              "Jazakumullahu khairan katsiran atas dedikasi dan keikhlasannya..."
+            </div>
+
+            <!-- Signatures -->
+            <div class="slip-sign-row">
+              <div class="slip-sign-col">
+                <div class="slip-sign-date">Penerima Mukafa'ah,</div>
+                <div class="slip-stamp-container"></div>
+                <div class="slip-sign-name" id="slipPaperReceiverName">Ustadz/Ustadzah</div>
+                <div class="slip-sign-role">Pengajar RQ</div>
+              </div>
+              <div class="slip-sign-col">
+                <div class="slip-sign-date" id="slipPaperSignDate">Kota, Tanggal</div>
+                <div class="slip-stamp-container">
+                  <span style="font-size: 0.72rem; color: #15803d; border: 1.5px solid #15803d; border-radius: 50%; padding: 4px 8px; transform: rotate(-8deg); display: inline-block;">LUNAS</span>
+                </div>
+                <div class="slip-sign-name" id="slipPaperSignerName">Ust. Pembina RQ</div>
+                <div class="slip-sign-role" id="slipPaperSignerTitle">Mudir Rumah Qur'an</div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+      <div class="modal-footer" style="flex-wrap: wrap; justify-content: space-between;">
+        <div>
+          <button class="btn-action-wa" id="btnPreviewSendWa" onclick="sendSlipDirectViaWa(activePreviewTeacherId)">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>
+            <span>Kirim Teks ke WhatsApp</span>
+          </button>
+          
+          <button class="btn-primary" onclick="downloadSlipAsImage()" style="margin-left: 6px;">
+            <span>📸 Unduh Gambar Slip (PNG)</span>
+          </button>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <button class="btn-print" onclick="window.print()">
+            <span>🖨️ Cetak / PDF</span>
+          </button>
+          <button class="btn-secondary" onclick="closeSlipPreviewModal()">Tutup</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================== -->
+  <!-- MODAL: EDIT NOMINAL KHUSUS PER GURU            -->
+  <!-- ============================================== -->
+  <div id="modalEditTeacherSalary" class="modal-backdrop" style="display: none;">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="modalEditSalaryTeacherTitle">Sesuaikan Nominal Guru</h3>
+        <button class="modal-close-btn" onclick="closeEditTeacherSalaryModal()">✕</button>
+      </div>
+      <form id="formEditTeacherSalary" onsubmit="saveTeacherSalaryOverride(event)">
+        <input type="hidden" id="overrideTeacherId" value="">
+        <div class="modal-body">
+          <p class="modal-intro">
+            Penyesuaian khusus untuk ustadz/ustadzah ini pada bulan berjalan (misal ada tugas tambahan atau kas/infaq):
+          </p>
+
+          <div class="form-group">
+            <label for="overrideInputPokok">Mukafa'ah Pokok (Rp):</label>
+            <input type="text" inputmode="numeric" id="overrideInputPokok" class="form-control" placeholder="Contoh: 500.000 atau 500000" required>
+          </div>
+
+          <div class="form-group">
+            <label for="overrideInputRateHadir">Tarif Insentif Per Kehadiran (Rp):</label>
+            <input type="text" inputmode="numeric" id="overrideInputRateHadir" class="form-control" placeholder="Contoh: 43.750 atau 43750" required>
+            <small style="color:var(--text-muted);font-size:0.75rem;">
+              Bebas memasukkan nominal ganjil maupun pecahan (contoh: 43.750 atau 43750).
+            </small>
+          </div>
+
+          <div class="form-group">
+            <label for="overrideInputBonus">Tunjangan / Bonus Tambahan (Rp):</label>
+            <input type="text" inputmode="numeric" id="overrideInputBonus" class="form-control" value="0" placeholder="Contoh: 50.000 atau 0">
+          </div>
+
+          <div class="form-group">
+            <label for="overrideInputPotongan">Potongan Kas / Infaq / Terlambat (Rp):</label>
+            <input type="text" inputmode="numeric" id="overrideInputPotongan" class="form-control" value="0" placeholder="Contoh: 10.000 atau 0">
+          </div>
+
+          <div class="form-group">
+            <label for="overrideInputCatatan">Catatan Tambahan (Opsional):</label>
+            <input type="text" id="overrideInputCatatan" class="form-control" placeholder="Contoh: Tugas Pengganti / Kas Halaqah">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" onclick="resetTeacherSalaryToDefault()">Reset ke Standar</button>
+          <button type="submit" class="btn-primary">Simpan Nominal</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+
+  <!-- ============================================== -->
+  <!-- MODAL: FORM IZIN / SAKIT                       -->
+  <!-- ============================================== -->
+  <div id="modalIzin" class="modal-backdrop" style="display: none;">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="modalIzinTitle">Form Izin / Sakit</h3>
+        <button class="modal-close-btn" onclick="closeIzinModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-intro">Mencatat keterangan tidak hadir untuk: <strong id="modalIzinTeacherName">-</strong></p>
+        
+        <div class="form-group">
+          <label for="selectAlasanIzin">Jenis Keterangan:</label>
+          <select id="selectAlasanIzin" class="form-control">
+            <option value="Izin">Izin (Uzur / Kepentingan)</option>
+            <option value="Sakit">Sakit</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="inputCatatanIzin">Catatan Tambahan (Opsional):</label>
+          <textarea id="inputCatatanIzin" class="form-control" rows="3" placeholder="Contoh: Menghadiri walimah, sedang flu, ada guru pengganti, dll."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" onclick="closeIzinModal()">Batal</button>
+        <button class="btn-primary" onclick="submitIzin()">Kirim Izin</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================== -->
+  <!-- MODAL: TAMBAH / EDIT GURU                      -->
+  <!-- ============================================== -->
+  <div id="modalTeacher" class="modal-backdrop" style="display: none;">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="modalTeacherTitle">Tambah Pengajar Baru</h3>
+        <button class="modal-close-btn" onclick="closeTeacherModal()">✕</button>
+      </div>
+      <form id="formTeacherModal" onsubmit="saveTeacherFromModal(event)">
+        <input type="hidden" id="editTeacherId" value="">
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="inputTeacherName">Nama Lengkap & Gelar:*</label>
+            <input type="text" id="inputTeacherName" class="form-control" placeholder="Contoh: Ustadz Ahmad Fauzi, S.Pd.I" required>
+          </div>
+
+          <div class="form-group">
+            <label for="inputTeacherHalaqah">Halaqah / Tugas Mengajar:*</label>
+            <input type="text" id="inputTeacherHalaqah" class="form-control" placeholder="Contoh: Halaqah Tahfidz Sore / Sesi A" required>
+          </div>
+
+          <div class="form-group">
+            <label for="inputTeacherPhone">Nomor WhatsApp (Aktif untuk Slip Gaji):*</label>
+            <input type="text" id="inputTeacherPhone" class="form-control" placeholder="Contoh: 081234567890" required>
+          </div>
+
+          <div class="form-group">
+            <label for="selectTeacherStatus">Status Keaktifan:</label>
+            <select id="selectTeacherStatus" class="form-control">
+              <option value="Aktif">Aktif Mengajar</option>
+              <option value="Nonaktif">Non-aktif / Cuti</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" onclick="closeTeacherModal()">Batal</button>
+          <button type="submit" class="btn-primary" id="btnSaveTeacherSubmit">Simpan Data Guru</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ============================================== -->
+  <!-- MODAL: DETAIL RIWAYAT PER GURU                -->
+  <!-- ============================================== -->
+  <div id="modalDetailGuru" class="modal-backdrop" style="display: none;">
+    <div class="modal-card modal-large">
+      <div class="modal-header">
+        <h3 id="modalDetailTitle">Rincian Presensi Guru</h3>
+        <button class="modal-close-btn" onclick="closeDetailModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="teacher-detail-stats" id="teacherDetailStatsBox">
+          <!-- Populated dynamically -->
+        </div>
+        <h4 class="mt-3">Daftar Tanggal Kehadiran:</h4>
+        <div class="table-responsive-container mt-2">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Tanggal</th>
+                <th>Waktu (Jam)</th>
+                <th>Status</th>
+                <th>Keterangan</th>
+                <th style="width: 80px;" class="action-col">Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="teacherDetailTableBody">
+              <!-- Populated dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" onclick="closeDetailModal()">Tutup</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================== -->
+  <!-- MODAL: PANDUAN PASANG APLIKASI DI HP (APK)     -->
+  <!-- ============================================== -->
+  <div id="modalInstallApp" class="modal-backdrop" style="display: none;">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>📲 Pasang Aplikasi di HP (APK)</h3>
+        <button class="modal-close-btn" onclick="closeInstallModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-intro">Aplikasi ini berbasis <strong>Progressive Web App (PWA)</strong>, dapat dipasang langsung di layar utama HP seperti aplikasi APK Android atau iOS tanpa melalui Google Play Store.</p>
+        
+        <div class="install-tabs">
+          <button class="install-tab-btn active" id="btnTabAndroid" onclick="switchInstallGuide('android')">Android (Chrome/Edge)</button>
+          <button class="install-tab-btn" id="btnTabIos" onclick="switchInstallGuide('ios')">iPhone (Safari)</button>
+        </div>
+
+        <!-- Android Steps -->
+        <div id="guideAndroid">
+          <div class="install-step-item">
+            <div class="step-num">1</div>
+            <div class="step-content">
+              <strong>Buka di Google Chrome</strong>
+              <p>Buka tautan web aplikasi ini melalui peramban Google Chrome di HP Anda.</p>
+            </div>
+          </div>
+          <div class="install-step-item">
+            <div class="step-num">2</div>
+            <div class="step-content">
+              <strong>Tekan Menu Titik Tiga (⋮)</strong>
+              <p>Tekan tombol menu titik tiga di pojok kanan atas peramban Chrome.</p>
+            </div>
+          </div>
+          <div class="install-step-item">
+            <div class="step-num">3</div>
+            <div class="step-content">
+              <strong>Pilih "Instal Aplikasi" / "Tambahkan ke Layar Utama"</strong>
+              <p>Ikon <em>RQ Presensi</em> akan langsung muncul di beranda HP Anda layaknya aplikasi APK native!</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- iOS Steps -->
+        <div id="guideIos" style="display: none;">
+          <div class="install-step-item">
+            <div class="step-num">1</div>
+            <div class="step-content">
+              <strong>Buka di Safari iPhone</strong>
+              <p>Buka tautan aplikasi ini menggunakan peramban Safari bawaan iPhone.</p>
+            </div>
+          </div>
+          <div class="install-step-item">
+            <div class="step-num">2</div>
+            <div class="step-content">
+              <strong>Tekan Tombol Bagikan (Share ⎋)</strong>
+              <p>Tekan ikon kotak dengan panah ke atas di bagian bawah layar.</p>
+            </div>
+          </div>
+          <div class="install-step-item">
+            <div class="step-num">3</div>
+            <div class="step-content">
+              <strong>Pilih "Add to Home Screen" (Tambah ke Layar Utama)</strong>
+              <p>Tekan Tambah. Aplikasi siap digunakan seperti aplikasi App Store.</p>
+            </div>
+          </div>
+        </div>
+
+        <div id="pwaPromptDirectArea" style="margin-top: 14px; text-align: center; display: none;">
+          <button class="btn-primary" style="width: 100%;" onclick="triggerPwaPrompt()">
+            📥 Klik untuk Pasang Sekarang ke HP
+          </button>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" onclick="closeInstallModal()">Mengerti</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================== -->
+  <!-- MODAL: UBAH PIN PENGELOLA                      -->
+  <!-- ============================================== -->
+  <div id="modalChangePin" class="modal-backdrop" style="display: none;">
+    <div class="modal-card" style="max-width: 420px;">
+      <div class="modal-header">
+        <h3>🔐 Ubah PIN Pengelola</h3>
+        <button class="modal-close-btn" onclick="closeChangePinModal()">✕</button>
+      </div>
+      <form id="formChangePin" onsubmit="submitChangePin(event)">
+        <div class="modal-body">
+          <p class="modal-intro" style="font-size: 0.85rem; margin-bottom: 14px;">
+            Ganti PIN pengelola bawaan (<code>1234</code>) dengan PIN rahasia baru Anda untuk melindungi menu input guru, edit guru, dan rekap slip gaji.
+          </p>
+
+          <div class="form-group">
+            <label for="inputOldPin">PIN Lama / Saat Ini:*</label>
+            <input type="password" id="inputOldPin" class="form-control" placeholder="Masukkan PIN lama" maxlength="6" required>
+          </div>
+
+          <div class="form-group">
+            <label for="inputNewPin">PIN Baru (4-6 Digit Angka):*</label>
+            <input type="password" id="inputNewPin" class="form-control" placeholder="Masukkan PIN baru" maxlength="6" pattern="[0-9]{4,6}" inputmode="numeric" required>
+          </div>
+
+          <div class="form-group">
+            <label for="inputConfirmPin">Konfirmasi PIN Baru:*</label>
+            <input type="password" id="inputConfirmPin" class="form-control" placeholder="Ulangi PIN baru" maxlength="6" pattern="[0-9]{4,6}" inputmode="numeric" required>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" onclick="closeChangePinModal()">Batal</button>
+          <button type="submit" class="btn-primary">Simpan PIN Baru</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Notification Toast Container -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
