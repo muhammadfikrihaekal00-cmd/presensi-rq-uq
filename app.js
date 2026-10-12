@@ -175,17 +175,15 @@ function loadDataFromStorage() {
     const storedPin = localStorage.getItem(STORAGE_KEYS.ADMIN_PIN);
     adminPin = (storedPin && storedPin.trim()) ? storedPin.trim() : "1234";
 
-    // Teachers List (Migrasi otomatis ke Daftar Pengajar Asli RQ Ummul Qasim)
-    const SEED_VERSION_KEY = 'rq_teachers_version_v3_real';
-    const isSeedUpdated = localStorage.getItem(SEED_VERSION_KEY) === 'true';
+    // Teachers List (Selalu pastikan 4 Pengajar Resmi RQ Ummul Qasim termuat)
     const storedTeachers = localStorage.getItem(STORAGE_KEYS.TEACHERS);
     const parsedTeachers = safeJsonParse(storedTeachers, null);
-    const hasOldMockTeachers = Array.isArray(parsedTeachers) && parsedTeachers.some(t => t.name.includes('Abdul Rahman') || t.name.includes('Farhan'));
+    const hasHaekal = Array.isArray(parsedTeachers) && parsedTeachers.some(t => t.name && t.name.includes('Haekal'));
 
-    if (!isSeedUpdated || hasOldMockTeachers || !Array.isArray(parsedTeachers) || parsedTeachers.length === 0) {
+    if (!hasHaekal || !Array.isArray(parsedTeachers) || parsedTeachers.length === 0) {
       teachersList = [ ...DEFAULT_TEACHERS ];
       saveTeachersToStorage();
-      localStorage.setItem(SEED_VERSION_KEY, 'true');
+      localStorage.setItem('rq_teachers_version_v3_real', 'true');
       attendanceLogs = generateSeedLogs(teachersList);
       saveLogsToStorage();
     } else {
@@ -2097,6 +2095,14 @@ function angkaKeTerbilang(angka) {
 /* ============================================================
    KELOLA DATA GURU & FITUR PENGATURAN (TAB 4)
    ============================================================ */
+function formatWaLink(phone) {
+  if (!phone) return '#';
+  let clean = phone.replace(/[^0-9]/g, '');
+  if (clean.startsWith('0')) clean = '62' + clean.substring(1);
+  else if (!clean.startsWith('62')) clean = '62' + clean;
+  return `https://wa.me/${clean}`;
+}
+
 function renderTeachersManageTable() {
   const tbody = document.getElementById('teachersManageBody');
   if (!tbody) return;
@@ -2108,7 +2114,7 @@ function renderTeachersManageTable() {
       <td class="text-center">${idx + 1}</td>
       <td><strong>${escapeHtml(t.name)}</strong></td>
       <td>${escapeHtml(t.halaqah)}</td>
-      <td>${t.phone ? `<a href="https://wa.me/${t.phone.replace(/[^0-9]/g, '')}" target="_blank" style="color:var(--primary);text-decoration:none;">${escapeHtml(t.phone)}</a>` : '-'}</td>
+      <td>${t.phone ? `<a href="${formatWaLink(t.phone)}" target="_blank" rel="noopener noreferrer" style="color:var(--primary);font-weight:600;text-decoration:none;">💬 ${escapeHtml(t.phone)}</a>` : '-'}</td>
       <td>
         <span class="status-badge ${t.status === 'Aktif' ? 'badge-hadir' : 'badge-belum'}">
           ${t.status}
@@ -2415,13 +2421,49 @@ function confirmResetData() {
   showToast('Data telah direset ke pengaturan default.', 'info');
 }
 
+/* Sinkronisasi Paksa 4 Pengajar Resmi RQ Ummul Qasim */
+function forceSyncOfficialTeachers(silent = false) {
+  teachersList = JSON.parse(JSON.stringify(DEFAULT_TEACHERS));
+  saveTeachersToStorage();
+  localStorage.setItem('rq_teachers_version_v3_real', 'true');
+  attendanceLogs = generateSeedLogs(teachersList);
+  saveLogsToStorage();
+  selectedTeacherId = "";
+  renderTeacherSelectOptions();
+  renderTeacherQuickChips();
+  renderTodayMonitor();
+  loadRecapData();
+  renderTeachersManageTable();
+  if (isAdminUnlocked) loadSalaryData();
+  onSelectedTeacherChange();
+
+  if ('caches' in window) {
+    caches.keys().then(keys => {
+      keys.forEach(k => {
+        if (k !== 'rq-presensi-v20261012-final') {
+          caches.delete(k);
+        }
+      });
+    });
+  }
+
+  if (!silent) {
+    showToast('Alhamdulillah, 4 data pengajar resmi RQ Ummul Qasim berhasil dimuat!', 'success');
+  }
+}
+window.forceSyncOfficialTeachers = forceSyncOfficialTeachers;
+
 /* ============================================================
    PWA & PANDUAN PASANG KE HP (APK FEEL)
    ============================================================ */
 function initPwaAndServiceWorker() {
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js').catch(() => {});
+      navigator.serviceWorker.register('./sw.js?v=20261012-final')
+        .then((reg) => {
+          reg.update();
+        })
+        .catch(() => {});
     });
   }
 

@@ -1,5 +1,5 @@
 // Service Worker for Presensi Pengajar RQ Ummul Qasim
-const CACHE_NAME = 'rq-presensi-v3';
+const CACHE_NAME = 'rq-presensi-v20261012-final';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -10,11 +10,6 @@ const ASSETS_TO_CACHE = [
 ];
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(ASSETS_TO_CACHE).catch(() => {});
-    })
-  );
   self.skipWaiting();
 });
 
@@ -22,7 +17,11 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) => {
       return Promise.all(
-        keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))
+        keys.map((key) => {
+          if (key !== CACHE_NAME) {
+            return caches.delete(key);
+          }
+        })
       );
     })
   );
@@ -32,9 +31,9 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
 
-  // Network-First: Always fetch latest from server if online, fallback to cache if offline
+  // Network-First: Always fetch latest from server if online, bypass browser disk cache
   event.respondWith(
-    fetch(event.request)
+    fetch(event.request, { cache: 'no-cache' })
       .then((networkResponse) => {
         if (networkResponse && networkResponse.status === 200) {
           const responseClone = networkResponse.clone();
