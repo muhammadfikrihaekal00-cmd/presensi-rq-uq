@@ -30,20 +30,26 @@
   <!-- Auto Migrate Old Cache Immediately -->
   <script>
     (function() {
-      // 1. Bersihkan CacheStorage lama di browser HP
+      // 1. Bersihkan CacheStorage lama di browser HP / PC
       if ('caches' in window) {
         caches.keys().then(function(names) {
           names.forEach(function(name) {
-            if (name !== 'rq-presensi-v20261012-cloud') {
+            if (name !== 'rq-presensi-v20261012-modern-icons') {
               caches.delete(name);
             }
           });
         });
       }
-      // 2. Perbarui Service Worker secara langsung
+      // 2. Perbarui Service Worker secara langsung dan auto-reload jika worker baru aktif
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.getRegistrations().then(function(regs) {
           regs.forEach(function(r) { r.update(); });
+        });
+        navigator.serviceWorker.addEventListener('controllerchange', function() {
+          if (!sessionStorage.getItem('rq_sw_reloaded')) {
+            sessionStorage.setItem('rq_sw_reloaded', '1');
+            window.location.reload();
+          }
         });
       }
       // 3. Bersihkan data demo lama jika Ustadz Haekal belum tersimpan

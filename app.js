@@ -2515,7 +2515,7 @@ window.forceSyncOfficialTeachers = forceSyncOfficialTeachers;
 function initPwaAndServiceWorker() {
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js?v=20261012-final')
+      navigator.serviceWorker.register('./sw.js?v=20261012-modern-icons')
         .then((reg) => {
           reg.update();
         })
