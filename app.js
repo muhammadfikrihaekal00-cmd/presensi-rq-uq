@@ -46,11 +46,34 @@ const DEFAULT_SLIP_SETTINGS = {
 };
 
 const DEFAULT_TEACHERS = [
-  { id: 'tch-1', name: 'Ust. Abdul Rahman, S.Pd.I', halaqah: 'Halaqah Tahfidz Sore / Sesi A', phone: '081234567891', status: 'Aktif' },
-  { id: 'tch-2', name: 'Usth. Maryam Al-Khansa', halaqah: 'Halaqah Tahsin Akhwat / Sesi 1', phone: '081234567892', status: 'Aktif' },
-  { id: 'tch-3', name: 'Ust. Muhammad Farhan', halaqah: 'Halaqah Tahfidz Anak / Sesi Sore', phone: '081234567893', status: 'Aktif' },
-  { id: 'tch-4', name: 'Usth. Siti Aisyah, S.Ag', halaqah: 'Halaqah Mutaba\'ah Juz \'Amma', phone: '081234567894', status: 'Aktif' },
-  { id: 'tch-5', name: 'Ust. Zulkifli Hamzah', halaqah: 'Halaqah Qira\'ah & Tajwid Dewasa', phone: '081234567895', status: 'Aktif' }
+  { 
+    id: 'tch-1', 
+    name: 'Ustadz Muhammad Fikri Haekal, C.LQ', 
+    halaqah: 'Kelas Tahfizh Menengah Ikhwan', 
+    phone: '082189480869', 
+    status: 'Aktif' 
+  },
+  { 
+    id: 'tch-2', 
+    name: 'Ustadzah Ummu Khadijah', 
+    halaqah: 'Kelas Tahfizh Dasar Ikhwan & Akhowat', 
+    phone: '082339495396', 
+    status: 'Aktif' 
+  },
+  { 
+    id: 'tch-3', 
+    name: 'Ustadzah A. Lulu Aprilia Latifa', 
+    halaqah: 'Kelas Tahfizh Menengah Akhowat', 
+    phone: '087722442651', 
+    status: 'Aktif' 
+  },
+  { 
+    id: 'tch-4', 
+    name: 'Ustadzah Khirfatul jannah', 
+    halaqah: 'Kelas Tahfizh Dasar Ikhwan', 
+    phone: '089654707922', 
+    status: 'Aktif' 
+  }
 ];
 
 // In-Memory Application State
@@ -152,24 +175,30 @@ function loadDataFromStorage() {
     const storedPin = localStorage.getItem(STORAGE_KEYS.ADMIN_PIN);
     adminPin = (storedPin && storedPin.trim()) ? storedPin.trim() : "1234";
 
-    // Teachers List
+    // Teachers List (Migrasi otomatis ke Daftar Pengajar Asli RQ Ummul Qasim)
+    const SEED_VERSION_KEY = 'rq_teachers_version_v3_real';
+    const isSeedUpdated = localStorage.getItem(SEED_VERSION_KEY) === 'true';
     const storedTeachers = localStorage.getItem(STORAGE_KEYS.TEACHERS);
     const parsedTeachers = safeJsonParse(storedTeachers, null);
-    if (Array.isArray(parsedTeachers) && parsedTeachers.length > 0) {
-      teachersList = parsedTeachers;
-    } else {
+    const hasOldMockTeachers = Array.isArray(parsedTeachers) && parsedTeachers.some(t => t.name.includes('Abdul Rahman') || t.name.includes('Farhan'));
+
+    if (!isSeedUpdated || hasOldMockTeachers || !Array.isArray(parsedTeachers) || parsedTeachers.length === 0) {
       teachersList = [ ...DEFAULT_TEACHERS ];
       saveTeachersToStorage();
-    }
-
-    // Attendance Logs
-    const storedLogs = localStorage.getItem(STORAGE_KEYS.LOGS);
-    const parsedLogs = safeJsonParse(storedLogs, null);
-    if (Array.isArray(parsedLogs) && parsedLogs.length > 0) {
-      attendanceLogs = parsedLogs;
-    } else {
+      localStorage.setItem(SEED_VERSION_KEY, 'true');
       attendanceLogs = generateSeedLogs(teachersList);
       saveLogsToStorage();
+    } else {
+      teachersList = parsedTeachers;
+      // Attendance Logs
+      const storedLogs = localStorage.getItem(STORAGE_KEYS.LOGS);
+      const parsedLogs = safeJsonParse(storedLogs, null);
+      if (Array.isArray(parsedLogs) && parsedLogs.length > 0) {
+        attendanceLogs = parsedLogs;
+      } else {
+        attendanceLogs = generateSeedLogs(teachersList);
+        saveLogsToStorage();
+      }
     }
   } catch (err) {
     console.error('Error saat membaca data storage:', err);
