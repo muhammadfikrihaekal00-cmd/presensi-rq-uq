@@ -1,10 +1,11 @@
 // Service Worker for Presensi Pengajar RQ Ummul Qasim
-const CACHE_NAME = 'rq-presensi-v20261012-final';
+const CACHE_NAME = 'rq-presensi-v20261012-cloud';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
   './style.css',
   './app.js',
+  './firebase-config.js',
   './manifest.json',
   './icon.svg'
 ];
@@ -30,6 +31,12 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
+
+  const url = event.request.url;
+  // Jangan cache streaming / API Firebase Firestore
+  if (url.includes('firestore.googleapis.com') || url.includes('firebaseio.com') || url.includes('identitytoolkit')) {
+    return;
+  }
 
   // Network-First: Always fetch latest from server if online, bypass browser disk cache
   event.respondWith(

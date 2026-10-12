@@ -40,7 +40,16 @@ Pengelola bebas mengedit tampilan slip gaji sesuai identitas lembaga:
 
 ---
 
-### 5. 📱 Khusus Pengajar di HP & Mode Windows
+### 5. ☁️ Sinkronisasi Real-Time Multi-Perangkat (Firebase Firestore)
+- **Tersinkron Otomatis Antara HP Guru & Laptop Pengelola:** Saat ustadz/ustadzah menekan tombol "Hadir Sekarang" di smartphone masing-masing, catatan kehadiran langsung bertambah seketika di laptop pengelola tanpa perlu memuat ulang halaman.
+- **Satu PIN Rahasia Untuk Semua Perangkat:** Penggantian PIN di laptop langsung otomatis berlaku saat pengelola membuka aplikasi di HP.
+- **Dukungan Mode Offline & Cadangan Lokal:** Jika internet padam atau Firebase belum dihubungkan, aplikasi tetap dapat digunakan secara lokal menggunakan memori browser (*LocalStorage*).
+- **Indikator Status Cloud di Header:** Menampilkan lampu indikator status koneksi (🟢 Online / 🟡 Menghubungkan / 🟠 Lokal / 🔴 Gagal).
+- **Tombol Migrasi 1-Klik:** Pengelola dapat mengunggah seluruh data guru dan pengaturan lokal ke Cloud hanya dengan menekan satu tombol.
+
+---
+
+### 6. 📱 Khusus Pengajar di HP & Mode Windows
 - **Navigasi Bawah (*Mobile Bottom Nav*):** Thumb-friendly (Absen, Rekap, Gaji 🔒, Kelola).
 - **Sentuh Cepat Nama Guru (*Quick Avatar Chips*):** Absen dalam 2 detik dengan mengetuk kartu nama dan avatar.
 - **Haptic Vibration & Chime Sound:** Getaran lembut dan bel merdu saat presensi berhasil.
@@ -49,8 +58,28 @@ Pengelola bebas mengedit tampilan slip gaji sesuai identitas lembaga:
 
 ---
 
-## 🚀 Cara Menjalankan
+## 🚀 Panduan Menghubungkan ke Cloud Firebase (Gratis 100%)
 
-1. Buka file [`index.html`](file:///C:/Users/Pongo/.gemini/antigravity-ide/scratch/rq-ummul-qasim-presensi/index.html) di peramban (Google Chrome, Edge, Safari di HP/Laptop).
-2. Untuk membuka bagian Insentif & Gaji, klik tab **"Insentif & Slip Gaji 🔒"** dan masukkan PIN bawaan `1234`.
-3. Selesai! Seluruh data tersimpan otomatis di *LocalStorage* perangkat Anda.
+Agar presensi seluruh ustadz/ustadzah di HP mereka saling terhubung dan tersinkron ke laptop pengelola:
+
+1. Buka [console.firebase.google.com](https://console.firebase.google.com/) dan login dengan akun Google Anda.
+2. Klik **"Add project"** (Tambah proyek), beri nama misalnya `rq-presensi-uq`, lalu klik **Continue** sampai proyek selesai dibuat.
+3. Di panel menu kiri, klik **Build > Firestore Database**, lalu klik tombol **Create database**.
+4. Pilih lokasi (misal `asia-southeast1` atau default), lalu pada aturan keamanan pilih **Start in test mode** (klik *Next* lalu *Enable*).
+5. Kembali ke halaman utama proyek (klik ikon gerigi ⚙️ di samping kiri atas > **Project settings**), di bagian *Your apps*, klik ikon **Web (`</>`)**.
+6. Beri nama app misalnya `Presensi RQ`, lalu salin kode konfigurasi `firebaseConfig`:
+   ```javascript
+   const firebaseConfig = {
+     apiKey: "AIzaSy...",
+     authDomain: "rq-presensi-uq.firebaseapp.com",
+     projectId: "rq-presensi-uq",
+     storageBucket: "rq-presensi-uq.appspot.com",
+     messagingSenderId: "123456789",
+     appId: "1:123456789:web:abcdef"
+   };
+   ```
+7. Buka aplikasi Presensi RQ di browser (di Laptop atau HP), klik tombol **"Cloud"** di bagian atas (atau buka Tab Pengaturan > *Atur Koneksi Firebase*).
+8. Tempel kode konfigurasi di kolom **Tempel Cepat**, klik **Ekstrak Otomatis**, lalu klik **Simpan & Hubungkan**.
+9. Terakhir, klik tombol **"☁️ Unggah Data Lokal ke Cloud"** agar daftar pengajar resmi dan pengaturan langsung terunggah ke database online.
+10. Selesai! Mulai sekarang, setiap HP pengajar yang membuka link Vercel akan otomatis tersambung ke database yang sama secara real-time.
+

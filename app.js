@@ -108,6 +108,7 @@ document.addEventListener('DOMContentLoaded', () => {
   updateAdminUIState();
   initPwaAndServiceWorker();
   initKeyboardShortcuts();
+  initCloudSync();
 });
 
 /* ============================================================
@@ -184,17 +185,17 @@ function loadDataFromStorage() {
       teachersList = [ ...DEFAULT_TEACHERS ];
       saveTeachersToStorage();
       localStorage.setItem('rq_teachers_version_v3_real', 'true');
-      attendanceLogs = generateSeedLogs(teachersList);
+      attendanceLogs = [];
       saveLogsToStorage();
     } else {
       teachersList = parsedTeachers;
       // Attendance Logs
       const storedLogs = localStorage.getItem(STORAGE_KEYS.LOGS);
       const parsedLogs = safeJsonParse(storedLogs, null);
-      if (Array.isArray(parsedLogs) && parsedLogs.length > 0) {
+      if (Array.isArray(parsedLogs)) {
         attendanceLogs = parsedLogs;
       } else {
-        attendanceLogs = generateSeedLogs(teachersList);
+        attendanceLogs = [];
         saveLogsToStorage();
       }
     }
@@ -205,7 +206,7 @@ function loadDataFromStorage() {
     salaryOverrides = {};
     adminPin = "1234";
     teachersList = [ ...DEFAULT_TEACHERS ];
-    attendanceLogs = generateSeedLogs(teachersList);
+    attendanceLogs = [];
   }
 }
 
@@ -664,8 +665,13 @@ function submitChangePin(e) {
 
   adminPin = newPin;
   localStorage.setItem(STORAGE_KEYS.ADMIN_PIN, newPin);
+
+  if (window.RQ_FIREBASE && window.RQ_FIREBASE.getStatus() === 'online') {
+    window.RQ_FIREBASE.writeSecurityPin(newPin).catch(e => console.error('Gagal simpan PIN ke cloud:', e));
+  }
+
   closeChangePinModal();
-  showToast('PIN Pengelola berhasil diperbarui!', 'success');
+  showToast('PIN Pengelola berhasil diperbarui & disinkronkan!', 'success');
 }
 
 const saveNewAdminPin = submitChangePin;
@@ -888,6 +894,10 @@ function recordAttendance(type, note = '') {
 
   attendanceLogs.unshift(newLog);
   saveLogsToStorage();
+
+  if (window.RQ_FIREBASE && window.RQ_FIREBASE.getStatus() === 'online') {
+    window.RQ_FIREBASE.writeAttendanceLog(newLog).catch(e => console.error('Gagal simpan log ke cloud:', e));
+  }
 
   if (type === 'Hadir') {
     playSuccessChime();
@@ -1156,6 +1166,11 @@ function deleteLogEntry(logId) {
 
   attendanceLogs = attendanceLogs.filter(l => l.id !== logId);
   saveLogsToStorage();
+
+  if (window.RQ_FIREBASE && window.RQ_FIREBASE.getStatus() === 'online') {
+    window.RQ_FIREBASE.deleteAttendanceLog(logId).catch(e => console.error('Gagal hapus log dari cloud:', e));
+  }
+
   showToast('Catatan presensi berhasil dihapus.', 'info');
   loadRecapData();
   renderTodayMonitor();
@@ -1522,6 +1537,11 @@ function saveSlipDesignerSettings(e) {
   slipSettings.labelPotongan = document.getElementById('inputLabelPotongan').value.trim();
 
   saveSlipSettingsToStorage();
+
+  if (window.RQ_FIREBASE && window.RQ_FIREBASE.getStatus() === 'online') {
+    window.RQ_FIREBASE.writeSlipSettings(slipSettings).catch(e => console.error('Gagal simpan slip settings ke cloud:', e));
+  }
+
   closeSlipDesignerModal();
   loadSalaryData();
   showToast(`Pengaturan tarif berhasil disimpan! Tarif per hadir: ${formatRupiah(ratePerHadir)}`, 'success');
@@ -1597,6 +1617,11 @@ function saveTeacherSalaryOverride(e) {
   };
 
   saveSalaryOverridesToStorage();
+
+  if (window.RQ_FIREBASE && window.RQ_FIREBASE.getStatus() === 'online') {
+    window.RQ_FIREBASE.writeSalaryOverrides(salaryOverrides).catch(e => console.error('Gagal simpan salary overrides ke cloud:', e));
+  }
+
   closeEditTeacherSalaryModal();
   loadSalaryData();
   showToast(`Nominal khusus guru (${formatRupiah(rateHadir)}/hadir) berhasil disimpan!`, 'success');
@@ -1613,6 +1638,11 @@ function resetTeacherSalaryToDefault() {
   delete salaryOverrides[overrideKey];
 
   saveSalaryOverridesToStorage();
+
+  if (window.RQ_FIREBASE && window.RQ_FIREBASE.getStatus() === 'online') {
+    window.RQ_FIREBASE.writeSalaryOverrides(salaryOverrides).catch(e => console.error('Gagal simpan salary overrides ke cloud:', e));
+  }
+
   closeEditTeacherSalaryModal();
   loadSalaryData();
   showToast('Nominal dikembalikan ke rumus standar.', 'info');
@@ -2200,10 +2230,12 @@ function saveTeacherFromModal(e) {
     return;
   }
 
+  let savedTeacher = null;
   if (id) {
     const idx = teachersList.findIndex(t => t.id === id);
     if (idx !== -1) {
       teachersList[idx] = { ...teachersList[idx], name, halaqah, phone, status };
+      savedTeacher = teachersList[idx];
       showToast(`Data ${name} berhasil diperbarui.`, 'success');
     }
   } else {
@@ -2215,10 +2247,16 @@ function saveTeacherFromModal(e) {
       status
     };
     teachersList.push(newTeacher);
+    savedTeacher = newTeacher;
     showToast(`Ustadz/Ustadzah ${name} berhasil ditambahkan!`, 'success');
   }
 
   saveTeachersToStorage();
+
+  if (window.RQ_FIREBASE && window.RQ_FIREBASE.getStatus() === 'online' && savedTeacher) {
+    window.RQ_FIREBASE.writeTeacher(savedTeacher).catch(e => console.error('Gagal simpan guru ke cloud:', e));
+  }
+
   closeTeacherModal();
   renderTeachersManageTable();
   renderTeacherSelectOptions();
@@ -2244,6 +2282,10 @@ function deleteTeacher(teacherId) {
 
   teachersList = teachersList.filter(t => t.id !== teacherId);
   saveTeachersToStorage();
+
+  if (window.RQ_FIREBASE && window.RQ_FIREBASE.getStatus() === 'online') {
+    window.RQ_FIREBASE.deleteTeacher(teacherId).catch(e => console.error('Gagal hapus guru dari cloud:', e));
+  }
   showToast(`Pengajar ${teacher.name} berhasil dihapus.`, 'info');
 
   renderTeachersManageTable();
@@ -2311,6 +2353,12 @@ function saveInstitutionSettings(e) {
 
   saveSettingsToStorage();
   saveSlipSettingsToStorage();
+
+  if (window.RQ_FIREBASE && window.RQ_FIREBASE.getStatus() === 'online') {
+    window.RQ_FIREBASE.writeGeneralSettings(appSettings).catch(e => console.error('Gagal simpan settings ke cloud:', e));
+    window.RQ_FIREBASE.writeSlipSettings(slipSettings).catch(e => console.error('Gagal simpan slip settings ke cloud:', e));
+  }
+
   applyInstitutionSettings();
   showToast(`Pengaturan lembaga & nama Mudir (${mudirName}) berhasil disimpan!`, 'success');
 }
@@ -2597,3 +2645,304 @@ function escapeHtml(str) {
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
 }
+
+/* ============================================================
+   FIREBASE REAL-TIME CLOUD DATABASE SYNCHRONIZATION
+   ============================================================ */
+function initCloudSync() {
+  if (!window.RQ_FIREBASE) return;
+
+  // 1. Dengarkan pembaruan status koneksi
+  window.RQ_FIREBASE.onStatusChange((status, config, detail) => {
+    updateCloudStatusUI(status, config, detail);
+  });
+
+  // 2. Hubungkan ke Firebase jika konfigurasi tersedia
+  const db = window.RQ_FIREBASE.initFirebase();
+  if (db) {
+    attachFirebaseRealtimeListeners();
+  }
+}
+
+function updateCloudStatusUI(status, config, detail) {
+  const btnHeader = document.getElementById('btnCloudStatus');
+  const statusText = document.getElementById('cloudStatusText');
+  const cardBadge = document.getElementById('cardCloudStatusBadge');
+  const cardDesc = document.getElementById('cloudStatusDesc');
+  const modalStatus = document.getElementById('modalCloudStatusText');
+  const modalProj = document.getElementById('modalCloudProjectDisplay');
+  const statTeachers = document.getElementById('cloudStatTeachers');
+  const statLogs = document.getElementById('cloudStatLogs');
+
+  if (statTeachers) statTeachers.textContent = `${teachersList.length} Guru`;
+  if (statLogs) statLogs.textContent = `${attendanceLogs.length} Catatan`;
+
+  if (!btnHeader) return;
+
+  btnHeader.className = 'btn-cloud-status';
+
+  if (status === 'online') {
+    btnHeader.classList.add('status-online');
+    if (statusText) statusText.textContent = 'Cloud: Terhubung';
+    if (cardBadge) {
+      cardBadge.className = 'cloud-badge-indicator badge-online';
+      cardBadge.textContent = '🟢 Online (Real-Time)';
+    }
+    if (cardDesc) cardDesc.textContent = `Terhubung ke Firebase (${config.projectId || 'Online'}). Presensi di HP langsung masuk ke Laptop seketika!`;
+    if (modalStatus) {
+      modalStatus.innerHTML = '<span style="color:#10b981;">🟢 Terhubung Real-Time</span>';
+    }
+    if (modalProj) {
+      modalProj.textContent = `Project ID: ${config.projectId} (Sinkronisasi aktif di semua HP & PC)`;
+    }
+  } else if (status === 'connecting') {
+    btnHeader.classList.add('status-connecting');
+    if (statusText) statusText.textContent = 'Cloud: Menghubungkan...';
+    if (cardBadge) {
+      cardBadge.className = 'cloud-badge-indicator badge-offline';
+      cardBadge.textContent = '🟡 Menghubungkan...';
+    }
+    if (cardDesc) cardDesc.textContent = 'Sedang menyambungkan ke Firebase Firestore...';
+    if (modalStatus) modalStatus.innerHTML = '<span style="color:#f59e0b;">🟡 Menghubungkan...</span>';
+  } else if (status === 'error') {
+    btnHeader.classList.add('status-error');
+    if (statusText) statusText.textContent = 'Cloud: Gagal';
+    if (cardBadge) {
+      cardBadge.className = 'cloud-badge-indicator badge-offline';
+      cardBadge.textContent = '🔴 Gagal Terhubung';
+    }
+    if (cardDesc) cardDesc.textContent = `Koneksi gagal: ${detail || 'Periksa API Key / Project ID'}. Data beralih sementara ke memori lokal.`;
+    if (modalStatus) modalStatus.innerHTML = `<span style="color:#ef4444;">🔴 Gagal: ${escapeHtml(detail || 'Error')}</span>`;
+  } else {
+    // Unconfigured / offline
+    btnHeader.classList.add('status-offline');
+    if (statusText) statusText.textContent = 'Cloud: Lokal';
+    if (cardBadge) {
+      cardBadge.className = 'cloud-badge-indicator badge-offline';
+      cardBadge.textContent = '🟠 Mode Lokal (Offline)';
+    }
+    if (cardDesc) cardDesc.textContent = 'Belum terhubung ke Firebase. Klik tombol di kanan untuk menghubungkan agar HP & laptop sinkron.';
+    if (modalStatus) modalStatus.innerHTML = '<span style="color:#f59e0b;">⚪ Belum Dikonfigurasi (Mode Lokal)</span>';
+    if (modalProj) modalProj.textContent = 'Data masih tersimpan di memori browser ini saja.';
+  }
+}
+
+function attachFirebaseRealtimeListeners() {
+  if (!window.RQ_FIREBASE) return;
+
+  // 1. Guru
+  window.RQ_FIREBASE.listenTeachers((teachers) => {
+    if (Array.isArray(teachers) && teachers.length > 0) {
+      teachersList = teachers;
+      saveTeachersToStorage();
+      renderTeacherSelectOptions();
+      renderTeacherQuickChips();
+      renderTodayMonitor();
+      renderTeachersManageTable();
+      loadRecapData();
+      if (isAdminUnlocked) loadSalaryData();
+      updateCloudStatCounters();
+    }
+  });
+
+  // 2. Presensi Logs
+  window.RQ_FIREBASE.listenAttendanceLogs((logs) => {
+    if (Array.isArray(logs)) {
+      attendanceLogs = logs;
+      saveLogsToStorage();
+      renderTodayMonitor();
+      renderTeacherQuickChips();
+      loadRecapData();
+      if (isAdminUnlocked) loadSalaryData();
+      onSelectedTeacherChange();
+      updateCloudStatCounters();
+    }
+  });
+
+  // 3. Settings & PIN
+  window.RQ_FIREBASE.listenSettings((settingsData) => {
+    if (settingsData.general) {
+      appSettings = { ...DEFAULT_SETTINGS, ...settingsData.general };
+      saveSettingsToStorage();
+      applyInstitutionSettings();
+    }
+    if (settingsData.security && settingsData.security.adminPin) {
+      adminPin = String(settingsData.security.adminPin).trim();
+      localStorage.setItem(STORAGE_KEYS.ADMIN_PIN, adminPin);
+    }
+    if (settingsData.slip) {
+      slipSettings = { ...DEFAULT_SLIP_SETTINGS, ...settingsData.slip };
+      saveSlipSettingsToStorage();
+    }
+    if (settingsData.salary_overrides && settingsData.salary_overrides.overrides) {
+      salaryOverrides = settingsData.salary_overrides.overrides;
+      saveSalaryOverridesToStorage();
+      if (isAdminUnlocked) loadSalaryData();
+    }
+  });
+}
+
+function updateCloudStatCounters() {
+  const statTeachers = document.getElementById('cloudStatTeachers');
+  const statLogs = document.getElementById('cloudStatLogs');
+  if (statTeachers) statTeachers.textContent = `${teachersList.length} Guru`;
+  if (statLogs) statLogs.textContent = `${attendanceLogs.length} Catatan`;
+}
+
+/* ============================================================
+   FIREBASE MODAL UI CONTROLLERS
+   ============================================================ */
+function openFirebaseConfigModal() {
+  const modal = document.getElementById('modalFirebaseConfig');
+  if (!modal) return;
+
+  const cfg = window.RQ_FIREBASE ? window.RQ_FIREBASE.getActiveConfig() : {};
+  const elProj = document.getElementById('fbInputProjectId');
+  const elKey = document.getElementById('fbInputApiKey');
+  const elAuth = document.getElementById('fbInputAuthDomain');
+  const elBucket = document.getElementById('fbInputStorageBucket');
+  const elAppId = document.getElementById('fbInputAppId');
+  const elMsg = document.getElementById('fbInputMessagingId');
+
+  if (elProj) elProj.value = cfg.projectId || '';
+  if (elKey) elKey.value = cfg.apiKey || '';
+  if (elAuth) elAuth.value = cfg.authDomain || '';
+  if (elBucket) elBucket.value = cfg.storageBucket || '';
+  if (elAppId) elAppId.value = cfg.appId || '';
+  if (elMsg) elMsg.value = cfg.messagingSenderId || '';
+
+  modal.style.display = 'flex';
+}
+
+function closeFirebaseConfigModal() {
+  const modal = document.getElementById('modalFirebaseConfig');
+  if (modal) modal.style.display = 'none';
+}
+
+function switchFbModalTab(tab) {
+  const isForm = tab === 'form';
+  const tabForm = document.getElementById('fbModalTabForm');
+  const tabGuide = document.getElementById('fbModalTabGuide');
+  const btnForm = document.getElementById('btnTabFbForm');
+  const btnGuide = document.getElementById('btnTabFbGuide');
+
+  if (tabForm) tabForm.style.display = isForm ? 'block' : 'none';
+  if (tabGuide) tabGuide.style.display = isForm ? 'none' : 'block';
+  if (btnForm) btnForm.classList.toggle('active', isForm);
+  if (btnGuide) btnGuide.classList.toggle('active', !isForm);
+}
+
+function parseAndFillFirebaseJson() {
+  const text = (document.getElementById('fbInputPasteJson').value || '').trim();
+  if (!text) {
+    showToast('Tempel cuplikan kode konfigurasi Firebase terlebih dahulu.', 'warning');
+    return;
+  }
+
+  try {
+    const extract = (field) => {
+      const match = text.match(new RegExp(`${field}\\s*:\\s*["']([^"']+)["']`, 'i'));
+      return match ? match[1] : '';
+    };
+
+    const apiKey = extract('apiKey');
+    const projectId = extract('projectId');
+    const authDomain = extract('authDomain');
+    const storageBucket = extract('storageBucket');
+    const messagingSenderId = extract('messagingSenderId');
+    const appId = extract('appId');
+
+    if (!projectId && !apiKey) {
+      showToast('Gagal menemukan apiKey atau projectId dalam teks.', 'error');
+      return;
+    }
+
+    if (apiKey) document.getElementById('fbInputApiKey').value = apiKey;
+    if (projectId) document.getElementById('fbInputProjectId').value = projectId;
+    if (authDomain) document.getElementById('fbInputAuthDomain').value = authDomain;
+    if (storageBucket) document.getElementById('fbInputStorageBucket').value = storageBucket;
+    if (messagingSenderId) document.getElementById('fbInputMessagingId').value = messagingSenderId;
+    if (appId) document.getElementById('fbInputAppId').value = appId;
+
+    showToast('Berhasil mengekstrak konfigurasi Firebase!', 'success');
+  } catch (err) {
+    showToast('Format teks belum sesuai: ' + err.message, 'error');
+  }
+}
+
+function saveFirebaseConfigAction() {
+  const projectId = document.getElementById('fbInputProjectId').value.trim();
+  const apiKey = document.getElementById('fbInputApiKey').value.trim();
+
+  if (!projectId || !apiKey) {
+    showToast('Project ID dan API Key Firebase wajib diisi!', 'warning');
+    return;
+  }
+
+  const cfg = {
+    projectId,
+    apiKey,
+    authDomain: document.getElementById('fbInputAuthDomain').value.trim(),
+    storageBucket: document.getElementById('fbInputStorageBucket').value.trim(),
+    appId: document.getElementById('fbInputAppId').value.trim(),
+    messagingSenderId: document.getElementById('fbInputMessagingId').value.trim()
+  };
+
+  try {
+    window.RQ_FIREBASE.saveConfig(cfg);
+    window.RQ_FIREBASE.detachListeners();
+    const db = window.RQ_FIREBASE.initFirebase();
+    if (db) {
+      attachFirebaseRealtimeListeners();
+      showToast('Alhamdulillah! Berhasil terhubung ke Firebase.', 'success');
+      closeFirebaseConfigModal();
+    }
+  } catch (err) {
+    showToast('Gagal menyimpan konfigurasi: ' + err.message, 'error');
+  }
+}
+
+function resetFirebaseConfigAction() {
+  if (!confirm('Putuskan koneksi Firebase dan kembali ke mode LocalStorage lokal?')) return;
+  window.RQ_FIREBASE.removeConfig();
+  showToast('Koneksi Firebase diputuskan. Berjalan dalam mode lokal.', 'info');
+}
+
+async function syncLocalToCloudAction() {
+  if (!window.RQ_FIREBASE || window.RQ_FIREBASE.getStatus() !== 'online') {
+    showToast('Firebase belum terhubung. Silakan hubungkan Firebase terlebih dahulu.', 'warning');
+    openFirebaseConfigModal();
+    return;
+  }
+
+  if (!confirm('Unggah seluruh data lokal saat ini (Daftar Guru, Log Kehadiran, PIN, dan Pengaturan) ke Cloud Firestore?')) {
+    return;
+  }
+
+  try {
+    showToast('Sedang mengunggah data ke Cloud Firestore...', 'info');
+    await window.RQ_FIREBASE.uploadLocalDataToCloud({
+      teachers: teachersList,
+      logs: attendanceLogs,
+      settings: appSettings,
+      adminPin: adminPin,
+      slipSettings: slipSettings,
+      salaryOverrides: salaryOverrides
+    });
+    showToast('Alhamdulillah! Seluruh data lokal berhasil tersinkron ke Cloud.', 'success');
+    updateCloudStatCounters();
+    closeFirebaseConfigModal();
+  } catch (err) {
+    showToast('Gagal mengunggah data: ' + err.message, 'error');
+  }
+}
+
+// Global window exposure for HTML onclick bindings
+window.openFirebaseConfigModal = openFirebaseConfigModal;
+window.closeFirebaseConfigModal = closeFirebaseConfigModal;
+window.switchFbModalTab = switchFbModalTab;
+window.parseAndFillFirebaseJson = parseAndFillFirebaseJson;
+window.saveFirebaseConfigAction = saveFirebaseConfigAction;
+window.resetFirebaseConfigAction = resetFirebaseConfigAction;
+window.syncLocalToCloudAction = syncLocalToCloudAction;
+

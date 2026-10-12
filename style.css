@@ -3392,4 +3392,166 @@ body {
   transform: translateY(-1px);
 }
 
+/* ============================================================
+   FIREBASE CLOUD DATABASE SYNC UI & STATUS BADGES
+   ============================================================ */
+.btn-cloud-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 12px;
+  border-radius: var(--radius-full);
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1.5px solid var(--border-color);
+  background: var(--surface);
+  color: var(--text-primary);
+  transition: var(--transition);
+  user-select: none;
+}
+
+.btn-cloud-status:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+.cloud-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  background-color: #94a3b8;
+  position: relative;
+}
+
+.btn-cloud-status.status-online {
+  border-color: rgba(16, 185, 129, 0.4);
+  background: rgba(16, 185, 129, 0.08);
+  color: #065f46;
+}
+
+[data-theme="dark"] .btn-cloud-status.status-online {
+  color: #34d399;
+}
+
+.btn-cloud-status.status-online .cloud-status-dot {
+  background-color: #10b981;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.25);
+  animation: pulseGreen 2s infinite;
+}
+
+.btn-cloud-status.status-connecting {
+  border-color: rgba(245, 158, 11, 0.4);
+  background: rgba(245, 158, 11, 0.08);
+  color: #b45309;
+}
+
+.btn-cloud-status.status-connecting .cloud-status-dot {
+  background-color: #f59e0b;
+  animation: pulseGreen 1s infinite;
+}
+
+.btn-cloud-status.status-error {
+  border-color: rgba(239, 68, 68, 0.4);
+  background: rgba(239, 68, 68, 0.08);
+  color: #b91c1c;
+}
+
+.btn-cloud-status.status-error .cloud-status-dot {
+  background-color: #ef4444;
+}
+
+.btn-cloud-status.status-unconfigured,
+.btn-cloud-status.status-offline {
+  border-color: var(--border-color);
+  color: var(--text-secondary);
+}
+
+@keyframes pulseGreen {
+  0% { transform: scale(0.95); opacity: 0.8; }
+  50% { transform: scale(1.2); opacity: 1; }
+  100% { transform: scale(0.95); opacity: 0.8; }
+}
+
+.cloud-badge-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: var(--radius-full);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.cloud-badge-indicator.badge-online {
+  background: rgba(16, 185, 129, 0.15);
+  color: #047857;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+[data-theme="dark"] .cloud-badge-indicator.badge-online {
+  color: #34d399;
+}
+
+.cloud-badge-indicator.badge-offline {
+  background: rgba(245, 158, 11, 0.12);
+  color: #b45309;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+[data-theme="dark"] .cloud-badge-indicator.badge-offline {
+  color: #fbbf24;
+}
+
+.cloud-info-box {
+  background: var(--surface-muted);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  margin-top: 14px;
+}
+
+.cloud-steps-guide {
+  background: var(--surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  margin-top: 12px;
+}
+
+.cloud-steps-guide ol {
+  padding-left: 20px;
+  margin: 8px 0;
+  line-height: 1.6;
+}
+
+.cloud-steps-guide li {
+  margin-bottom: 8px;
+  font-size: 0.88rem;
+}
+
+.cloud-stat-pills {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.cloud-stat-pill {
+  background: var(--surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  font-size: 0.82rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.cloud-stat-pill strong {
+  font-size: 1.05rem;
+  color: var(--primary);
+}
+
+
 
