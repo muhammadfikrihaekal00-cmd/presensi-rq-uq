@@ -310,15 +310,20 @@ function capitalizeFirstLetter(str) {
    DUAL EXPERIENCE: WINDOWS DESKTOP & SIMULASI HP
    ============================================================ */
 function initViewMode() {
-  const savedMode = localStorage.getItem(STORAGE_KEYS.VIEW_MODE);
-  if (!savedMode && window.innerWidth <= 768) {
-    setViewMode('hp', false);
-  } else {
-    setViewMode(savedMode === 'hp' ? 'hp' : 'windows', false);
+  if (window.innerWidth <= 768) {
+    // Layar HP asli: selalu gunakan tampilan mobile native penuh tanpa bingkai simulasi PC
+    document.body.classList.remove('phone-simulation-mode');
+    return;
   }
+  const savedMode = localStorage.getItem(STORAGE_KEYS.VIEW_MODE);
+  setViewMode(savedMode === 'hp' ? 'hp' : 'windows', false);
 }
 
 function setViewMode(mode, showNotification = true) {
+  if (window.innerWidth <= 768) {
+    document.body.classList.remove('phone-simulation-mode');
+    return;
+  }
   const isHp = mode === 'hp';
   localStorage.setItem(STORAGE_KEYS.VIEW_MODE, mode);
 
@@ -331,9 +336,9 @@ function setViewMode(mode, showNotification = true) {
 
   if (showNotification) {
     if (isHp) {
-      showToast('Beralih ke Simulasi Tampilan HP (Mobile)', 'info');
+      showToast('Beralih ke Simulasi Tampilan HP', 'info');
     } else {
-      showToast('Beralih ke Tampilan Windows Desktop', 'info');
+      showToast('Beralih ke Tampilan Komputer / PC', 'info');
     }
   }
 }
@@ -424,7 +429,7 @@ function updateAdminUIState() {
     authIcon.textContent = isAdminUnlocked ? '🔓' : '🔒';
   }
   if (authText) {
-    authText.textContent = isAdminUnlocked ? 'Sesi Pengelola Aktif (Klik Kunci)' : 'Mode Pengajar (Masuk Pengelola)';
+    authText.textContent = isAdminUnlocked ? 'Pengelola (Kunci)' : 'Pengelola';
   }
 
   // 2. Desktop Tab Badges
@@ -1018,8 +1023,8 @@ function loadRecapData() {
         <span class="rate-badge ${rateClass}">${rate}%</span>
       </td>
       <td class="text-center action-col">
-        <button class="btn-table-action" onclick="viewTeacherMonthDetail('${teacher.id}', ${selectedMonth}, ${selectedYear})">
-          Rincian
+        <button class="btn-table-action" onclick="viewTeacherMonthDetail('${teacher.id}', ${selectedMonth}, ${selectedYear})" title="Rincian Kehadiran">
+          🔍 Rincian
         </button>
       </td>
     `;
@@ -1047,8 +1052,8 @@ function loadRecapData() {
           <div class="rc-progress-bar-wrap">
             <div class="rc-progress-bar" style="width: ${rate}%;"></div>
           </div>
-          <button class="btn-table-action" onclick="viewTeacherMonthDetail('${teacher.id}', ${selectedMonth}, ${selectedYear})">
-            Rincian
+          <button class="btn-table-action" onclick="viewTeacherMonthDetail('${teacher.id}', ${selectedMonth}, ${selectedYear})" title="Rincian Kehadiran">
+            🔍 Rincian
           </button>
         </div>
       `;
@@ -1283,11 +1288,11 @@ function loadSalaryData() {
           <button class="btn-action-slip" onclick="viewSlipPreview('${teacher.id}')" title="Lihat & Unduh Slip">
             👁️ Slip
           </button>
-          <button class="btn-action-wa" onclick="sendSlipDirectViaWa('${teacher.id}')" title="Kirim Slip ke Nomor WhatsApp Guru">
-            💬 Kirim WA
+          <button class="btn-action-wa" onclick="sendSlipDirectViaWa('${teacher.id}')" title="Kirim Slip ke WhatsApp">
+            💬 WA
           </button>
-          <button class="btn-action-edit-sal" onclick="openEditTeacherSalaryModal('${teacher.id}')" title="Sesuaikan Nominal Khusus">
-            ✏️
+          <button class="btn-action-edit-sal" onclick="openEditTeacherSalaryModal('${teacher.id}')" title="Sesuaikan Nominal">
+            ✏️ Edit
           </button>
         </div>
       </td>
@@ -1336,14 +1341,14 @@ function loadSalaryData() {
         </div>
 
         <div class="sal-card-actions">
-          <button class="btn-action-edit-sal" onclick="openEditTeacherSalaryModal('${teacher.id}')">
-            ✏️ Edit Nominal
+          <button class="btn-action-edit-sal" onclick="openEditTeacherSalaryModal('${teacher.id}')" title="Sesuaikan Nominal">
+            ✏️ Edit
           </button>
-          <button class="btn-action-slip" onclick="viewSlipPreview('${teacher.id}')">
-            👁️ Lihat Slip
+          <button class="btn-action-slip" onclick="viewSlipPreview('${teacher.id}')" title="Lihat & Unduh Slip">
+            👁️ Slip
           </button>
-          <button class="btn-action-wa" onclick="sendSlipDirectViaWa('${teacher.id}')">
-            💬 Kirim WA
+          <button class="btn-action-wa" onclick="sendSlipDirectViaWa('${teacher.id}')" title="Kirim ke WhatsApp">
+            💬 WA
           </button>
         </div>
       `;
