@@ -9,7 +9,7 @@
   const STORAGE_KEY_SHEETS_URL = 'rq_sheets_webapp_url';
 
   // Preset default URL (bisa diisi langsung atau via UI aplikasi)
-  const PRESET_SHEETS_URL = "";
+  const PRESET_SHEETS_URL = "https://script.google.com/macros/s/AKfycbzT_Og7_1kd2bwlMpFJexw_uraIkNWxmlMfXvmy5gDG8r5OYufr4tHgp2rNXYjopNWI/exec";
 
   let syncStatus = 'unconfigured'; // 'unconfigured' | 'connecting' | 'online' | 'error' | 'offline'
   let statusListeners = [];
