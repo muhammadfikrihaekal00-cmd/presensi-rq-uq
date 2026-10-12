@@ -97,9 +97,9 @@
           </select>
         </div>
 
-        <button id="btnCloudStatus" class="btn-cloud-status status-unconfigured" onclick="openFirebaseConfigModal()" title="Status Sinkronisasi Cloud Database">
+        <button id="btnSheetsStatus" class="btn-cloud-status status-unconfigured" onclick="openSheetsConfigModal()" title="Status Sinkronisasi Google Spreadsheet">
           <span class="cloud-status-dot"></span>
-          <span id="cloudStatusText">Cloud</span>
+          <span id="sheetsStatusText">📊 Spreadsheet</span>
         </button>
 
         <button id="btnAdminAuthHeader" class="btn-admin-auth" onclick="toggleAdminAuth()" title="Masuk atau Kunci Mode Pengelola">
@@ -569,44 +569,44 @@
             </div>
           </div>
 
-          <!-- Bagian: Sinkronisasi Cloud Database (Firebase) -->
+          <!-- Bagian: Sinkronisasi Database Google Spreadsheet -->
           <div class="settings-card full-width">
             <div class="card-top-action">
               <div>
-                <h3 class="card-heading">☁️ Sinkronisasi Cloud Database (Firebase Firestore)</h3>
-                <p class="card-subheading">Sinkronkan data kehadiran & PIN secara real-time antar perangkat agar HP pengajar dan laptop pengelola terhubung otomatis.</p>
+                <h3 class="card-heading">📊 Database Google Spreadsheet (Excel Online)</h3>
+                <p class="card-subheading">Catatan presensi guru di HP otomatis tersimpan rapi ke baris Google Spreadsheet pengelola, dan PIN rahasia tersinkron ke semua perangkat.</p>
               </div>
               <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-                <span id="cardCloudStatusBadge" class="cloud-badge-indicator badge-offline">🔴 Mode Lokal (Offline)</span>
-                <button class="btn-primary" style="font-size: 0.85rem; padding: 10px 14px;" onclick="openFirebaseConfigModal()">
-                  ⚙️ Atur Koneksi Firebase
+                <span id="cardSheetsStatusBadge" class="cloud-badge-indicator badge-offline">🟠 Belum Terhubung</span>
+                <button class="btn-primary" style="font-size: 0.85rem; padding: 10px 14px;" onclick="openSheetsConfigModal()">
+                  ⚙️ Atur Spreadsheet
                 </button>
               </div>
             </div>
 
-            <div class="cloud-info-box" id="cloudInfoBox">
+            <div class="cloud-info-box" id="sheetsInfoBox">
               <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
                 <div>
-                  <strong>Status Database: </strong>
-                  <span id="cloudStatusDesc">Belum terhubung ke Firebase (data masih disimpan di memori browser perangkat ini saja).</span>
+                  <strong>Status Koneksi Spreadsheet: </strong>
+                  <span id="sheetsStatusDesc">Belum terhubung ke Google Spreadsheet (data masih disimpan di memori browser ini saja).</span>
                 </div>
                 <div class="cloud-stat-pills">
                   <div class="cloud-stat-pill">
                     <span style="font-size: 0.72rem; color: var(--text-muted);">Pengajar di Memori:</span>
-                    <strong id="cloudStatTeachers">0 Guru</strong>
+                    <strong id="sheetsStatTeachers">0 Guru</strong>
                   </div>
                   <div class="cloud-stat-pill">
                     <span style="font-size: 0.72rem; color: var(--text-muted);">Log Presensi:</span>
-                    <strong id="cloudStatLogs">0 Catatan</strong>
+                    <strong id="sheetsStatLogs">0 Catatan</strong>
                   </div>
                 </div>
               </div>
               <div style="margin-top: 14px; display: flex; gap: 10px; flex-wrap: wrap;">
-                <button class="btn-secondary" style="font-size: 0.82rem;" onclick="openFirebaseConfigModal()">
-                  🔑 Masukkan Kunci Firebase
+                <button class="btn-secondary" style="font-size: 0.82rem;" onclick="openSheetsConfigModal()">
+                  🔗 Hubungkan URL Spreadsheet
                 </button>
-                <button class="btn-outline-action" id="btnUploadLocalToCloud" style="font-size: 0.82rem;" onclick="syncLocalToCloudAction()" title="Kirim data saat ini ke Firebase">
-                  ☁️ Unggah Data Lokal ke Cloud
+                <button class="btn-outline-action" id="btnUploadLocalToSheets" style="font-size: 0.82rem;" onclick="syncLocalToSheetsAction()" title="Kirim data saat ini ke Google Spreadsheet">
+                  📊 Unggah Data Lokal ke Spreadsheet
                 </button>
               </div>
             </div>
@@ -1404,19 +1404,19 @@
   </div>
 
   <!-- ============================================== -->
-  <!-- MODAL: SINKRONISASI CLOUD DATABASE (FIREBASE)  -->
+  <!-- MODAL: SINKRONISASI GOOGLE SPREADSHEET         -->
   <!-- ============================================== -->
-  <div id="modalFirebaseConfig" class="modal-backdrop" style="display: none;">
+  <div id="modalSheetsConfig" class="modal-backdrop" style="display: none;">
     <div class="modal-card" style="max-width: 650px;">
       <div class="modal-header">
         <div style="display: flex; align-items: center; gap: 8px;">
-          <span style="font-size: 1.4rem;">☁️</span>
+          <span style="font-size: 1.4rem;">📊</span>
           <div>
-            <h3 style="margin: 0; font-size: 1.15rem;">Koneksi Cloud Database (Firebase)</h3>
-            <span style="font-size: 0.78rem; color: var(--text-muted);">Sinkronisasi presensi & slip gaji real-time antar HP & laptop</span>
+            <h3 style="margin: 0; font-size: 1.15rem;">Koneksi Google Spreadsheet</h3>
+            <span style="font-size: 0.78rem; color: var(--text-muted);">Database online berbasis Google Spreadsheet (Excel Online)</span>
           </div>
         </div>
-        <button class="modal-close-btn" onclick="closeFirebaseConfigModal()">✕</button>
+        <button class="modal-close-btn" onclick="closeSheetsConfigModal()">✕</button>
       </div>
 
       <div class="modal-body" style="max-height: 75vh; overflow-y: auto;">
@@ -1424,92 +1424,74 @@
         <div style="display: flex; justify-content: space-between; align-items: center; background: var(--surface-muted); padding: 14px 16px; border-radius: var(--radius-md); border: 1px solid var(--border-color); margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
           <div>
             <div style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); font-weight: 700;">Status Koneksi</div>
-            <div id="modalCloudStatusText" style="font-weight: 700; font-size: 1rem; color: var(--text-primary); margin-top: 2px;">
-              ⚪ Belum Dikonfigurasi
+            <div id="modalSheetsStatusText" style="font-weight: 700; font-size: 1rem; color: var(--text-primary); margin-top: 2px;">
+              ⚪ Belum Terhubung
             </div>
-            <div id="modalCloudProjectDisplay" style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 2px;">
+            <div id="modalSheetsUrlDisplay" style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 2px; word-break: break-all;">
               Data masih disimpan lokal di browser ini saja.
             </div>
           </div>
           <div style="display: flex; gap: 8px;">
-            <button class="btn-outline-action" id="btnModalUploadCloud" onclick="syncLocalToCloudAction()" style="font-size: 0.8rem;">
-              ☁️ Unggah Data Lokal
+            <button class="btn-outline-action" id="btnModalUploadSheets" onclick="syncLocalToSheetsAction()" style="font-size: 0.8rem;">
+              📊 Unggah Data Lokal
             </button>
           </div>
         </div>
 
         <!-- Tab Panduan & Input -->
         <div style="display: flex; gap: 8px; margin-bottom: 14px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">
-          <button type="button" class="view-toggle-btn active" id="btnTabFbForm" onclick="switchFbModalTab('form')" style="font-size: 0.85rem;">
-            ⚙️ Formulir Konfigurasi
+          <button type="button" class="view-toggle-btn active" id="btnTabSheetsForm" onclick="switchSheetsModalTab('form')" style="font-size: 0.85rem;">
+            🔗 Tautan Spreadsheet
           </button>
-          <button type="button" class="view-toggle-btn" id="btnTabFbGuide" onclick="switchFbModalTab('guide')" style="font-size: 0.85rem;">
-            📖 Panduan Gratis (3 Menit)
+          <button type="button" class="view-toggle-btn" id="btnTabSheetsGuide" onclick="switchSheetsModalTab('guide')" style="font-size: 0.85rem;">
+            📋 Panduan Salin Kode Script
           </button>
         </div>
 
-        <!-- Tab 1: Form Input Config -->
-        <div id="fbModalTabForm">
+        <!-- Tab 1: Form Input URL -->
+        <div id="sheetsModalTabForm">
           <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 14px;">
-            Salin konfigurasi Firebase Web App dari Google Console dan tempel di bawah ini:
+            Tempelkan URL Web App Google Spreadsheet Anda di bawah ini:
           </p>
 
           <div class="form-group">
-            <label for="fbInputPasteJson"><strong>Tempel Cepat Cuplikan Kode / JSON:</strong> (Opsional)</label>
-            <textarea id="fbInputPasteJson" class="form-control" rows="3" placeholder='Contoh: const firebaseConfig = { apiKey: "...", projectId: "...", ... };' style="font-family: monospace; font-size: 0.8rem;"></textarea>
-            <div style="display: flex; justify-content: flex-end; margin-top: 4px;">
-              <button type="button" class="btn-secondary" style="font-size: 0.75rem; padding: 4px 10px;" onclick="parseAndFillFirebaseJson()">
-                ⚡ Ekstrak Otomatis
-              </button>
-            </div>
+            <label for="inputSheetsWebAppUrl"><strong>URL Web App Google Apps Script:*</strong></label>
+            <input type="url" id="inputSheetsWebAppUrl" class="form-control" placeholder="https://script.google.com/macros/s/.../exec" required>
+            <small style="color:var(--text-muted);font-size:0.75rem;margin-top:4px;display:block;">
+              URL ini didapatkan dari menu <em>Deploy &gt; New deployment &gt; Web app</em> di Google Spreadsheet Anda.
+            </small>
           </div>
 
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-            <div class="form-group">
-              <label for="fbInputProjectId">Project ID:*</label>
-              <input type="text" id="fbInputProjectId" class="form-control" placeholder="rq-ummul-qasim-presensi" required>
-            </div>
-            <div class="form-group">
-              <label for="fbInputApiKey">API Key:*</label>
-              <input type="text" id="fbInputApiKey" class="form-control" placeholder="AIzaSy..." required>
-            </div>
-          </div>
-
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-            <div class="form-group">
-              <label for="fbInputAuthDomain">Auth Domain:</label>
-              <input type="text" id="fbInputAuthDomain" class="form-control" placeholder="rq-presensi.firebaseapp.com">
-            </div>
-            <div class="form-group">
-              <label for="fbInputStorageBucket">Storage Bucket:</label>
-              <input type="text" id="fbInputStorageBucket" class="form-control" placeholder="rq-presensi.appspot.com">
-            </div>
-          </div>
-
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-            <div class="form-group">
-              <label for="fbInputAppId">App ID (Opsional):</label>
-              <input type="text" id="fbInputAppId" class="form-control" placeholder="1:123456789:web:abcdef">
-            </div>
-            <div class="form-group">
-              <label for="fbInputMessagingId">Messaging Sender ID (Opsional):</label>
-              <input type="text" id="fbInputMessagingId" class="form-control" placeholder="123456789">
-            </div>
+          <div style="display: flex; gap: 10px; margin-top: 14px;">
+            <button type="button" class="btn-secondary" onclick="testSheetsConnection()" style="font-size: 0.85rem;">
+              ⚡ Uji Koneksi Sekarang
+            </button>
           </div>
         </div>
 
-        <!-- Tab 2: Tutorial Langkah Demi Langkah -->
-        <div id="fbModalTabGuide" style="display: none;">
+        <!-- Tab 2: Tutorial Langkah Demi Langkah & Salin Script -->
+        <div id="sheetsModalTabGuide" style="display: none;">
           <div class="cloud-steps-guide">
-            <h4 style="margin-top: 0; color: var(--primary);">Cara Membuat Firebase Firestore Gratis (3 Menit):</h4>
+            <h4 style="margin-top: 0; color: var(--primary);">Langkah Mudah Membuat Database Google Spreadsheet:</h4>
             <ol>
-              <li>Buka website <a href="https://console.firebase.google.com/" target="_blank" rel="noopener noreferrer" style="color: var(--primary); font-weight: 700; text-decoration: underline;">console.firebase.google.com</a> dan login dengan akun Google.</li>
-              <li>Klik <strong>"Add Project"</strong> (Tambah Proyek), beri nama (misal: <code>rq-presensi</code>), lalu klik <strong>Create Project</strong>.</li>
-              <li>Di menu sebelah kiri, pilih <strong>Build &gt; Firestore Database</strong>, lalu klik <strong>Create database</strong>.</li>
-              <li>Pilih lokasi (misal: <code>asia-southeast1</code> atau default) dan pilih mode <strong>Start in test mode</strong> (agar HP & laptop dapat langsung menyimpan data tanpa perlu login akun Google individu).</li>
-              <li>Klik ikon <strong>Web (&lt;/&gt;)</strong> di halaman ringkasan Project untuk mendaftarkan web app. Beri nama <code>Presensi RQ</code>.</li>
-              <li>Salin objek <code>firebaseConfig</code> yang muncul, lalu tempel di kolom <strong>Tempel Cepat</strong> di formulir konfigurasi aplikasi ini.</li>
-              <li>Klik <strong>Simpan & Hubungkan</strong>. Selesai! Seluruh data otomatis tersinkron ke semua perangkat.</li>
+              <li>Buka <a href="https://sheets.new" target="_blank" rel="noopener noreferrer" style="color: var(--primary); font-weight: 700; text-decoration: underline;">sheets.new</a> (atau buat file Google Spreadsheet baru di Google Drive Anda).</li>
+              <li>Beri nama spreadsheet misalnya: <strong>Data Presensi RQ Ummul Qasim</strong>.</li>
+              <li>Di menu atas Google Spreadsheet, klik <strong>Ekstensi &gt; Apps Script</strong>.</li>
+              <li>Hapus tulisan bawaan di editor Apps Script, lalu klik tombol biru di bawah ini untuk menyalin kodenya:
+                <div style="margin: 10px 0;">
+                  <button type="button" class="btn-primary" onclick="copySheetsScriptCode()" style="font-size: 0.85rem;">
+                    📋 Salin Kode Script Google Sheets
+                  </button>
+                </div>
+                Lalu tempelkan (Paste) di editor Apps Script tersebut.
+              </li>
+              <li>Klik tombol <strong>Deploy</strong> (kanan atas) &gt; <strong>New deployment</strong> (Deployment baru).</li>
+              <li>Pilih jenis <strong>Web app</strong>, lalu atur:
+                <br>• <em>Execute as:</em> <strong>Me</strong>
+                <br>• <em>Who has access:</em> <strong>Anyone</strong> (Siapa saja)
+              </li>
+              <li>Klik <strong>Deploy</strong> &gt; izinkan akses akun Google Anda &gt; salin <strong>Web app URL</strong> yang berakhiran <code>/exec</code>.</li>
+              <li>Tempelkan URL tersebut ke tab <strong>Tautan Spreadsheet</strong> di atas, lalu klik <strong>Simpan & Hubungkan</strong>. Selesai!</li>
             </ol>
           </div>
         </div>
@@ -1517,12 +1499,12 @@
       </div>
 
       <div class="modal-footer" style="justify-content: space-between; flex-wrap: wrap; gap: 8px;">
-        <button type="button" class="btn-danger-outline" onclick="resetFirebaseConfigAction()" style="font-size: 0.82rem;">
+        <button type="button" class="btn-danger-outline" onclick="resetSheetsConfigAction()" style="font-size: 0.82rem;">
           Putuskan / Reset
         </button>
         <div style="display: flex; gap: 8px;">
-          <button type="button" class="btn-secondary" onclick="closeFirebaseConfigModal()">Tutup</button>
-          <button type="button" class="btn-primary" onclick="saveFirebaseConfigAction()">Simpan & Hubungkan</button>
+          <button type="button" class="btn-secondary" onclick="closeSheetsConfigModal()">Tutup</button>
+          <button type="button" class="btn-primary" onclick="saveSheetsConfigAction()">Simpan & Hubungkan</button>
         </div>
       </div>
     </div>
@@ -1531,10 +1513,8 @@
   <!-- Notification Toast Container -->
   <div id="toastContainer" class="toast-container"></div>
 
-  <!-- Firebase SDK (Compat Pure Vanilla JS) -->
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
-  <script src="firebase-config.js?v=20261012-cloud"></script>
-  <script src="app.js?v=20261012-cloud"></script>
+  <!-- Google Spreadsheet Integration Script -->
+  <script src="sheets-sync.js?v=20261012-sheets"></script>
+  <script src="app.js?v=20261012-sheets"></script>
 </body>
 </html>

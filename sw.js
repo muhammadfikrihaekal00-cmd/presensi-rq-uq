@@ -1,11 +1,11 @@
 // Service Worker for Presensi Pengajar RQ Ummul Qasim
-const CACHE_NAME = 'rq-presensi-v20261012-cloud';
+const CACHE_NAME = 'rq-presensi-v20261012-sheets';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
   './style.css',
   './app.js',
-  './firebase-config.js',
+  './sheets-sync.js',
   './manifest.json',
   './icon.svg'
 ];
@@ -33,8 +33,8 @@ self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
 
   const url = event.request.url;
-  // Jangan cache streaming / API Firebase Firestore
-  if (url.includes('firestore.googleapis.com') || url.includes('firebaseio.com') || url.includes('identitytoolkit')) {
+  // Jangan cache API Google Spreadsheet
+  if (url.includes('script.google.com') || url.includes('googleusercontent.com')) {
     return;
   }
 

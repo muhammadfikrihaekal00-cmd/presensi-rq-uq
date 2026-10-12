@@ -108,7 +108,7 @@ document.addEventListener('DOMContentLoaded', () => {
   updateAdminUIState();
   initPwaAndServiceWorker();
   initKeyboardShortcuts();
-  initCloudSync();
+  initSheetsSync();
 });
 
 /* ============================================================
@@ -666,12 +666,12 @@ function submitChangePin(e) {
   adminPin = newPin;
   localStorage.setItem(STORAGE_KEYS.ADMIN_PIN, newPin);
 
-  if (window.RQ_FIREBASE && window.RQ_FIREBASE.getStatus() === 'online') {
-    window.RQ_FIREBASE.writeSecurityPin(newPin).catch(e => console.error('Gagal simpan PIN ke cloud:', e));
+  if (window.RQ_SHEETS && window.RQ_SHEETS.getStatus() === 'online') {
+    window.RQ_SHEETS.savePin(newPin).catch(e => console.error('Gagal simpan PIN ke Spreadsheet:', e));
   }
 
   closeChangePinModal();
-  showToast('PIN Pengelola berhasil diperbarui & disinkronkan!', 'success');
+  showToast('PIN Pengelola berhasil diperbarui & disinkronkan ke Spreadsheet!', 'success');
 }
 
 const saveNewAdminPin = submitChangePin;
@@ -895,8 +895,8 @@ function recordAttendance(type, note = '') {
   attendanceLogs.unshift(newLog);
   saveLogsToStorage();
 
-  if (window.RQ_FIREBASE && window.RQ_FIREBASE.getStatus() === 'online') {
-    window.RQ_FIREBASE.writeAttendanceLog(newLog).catch(e => console.error('Gagal simpan log ke cloud:', e));
+  if (window.RQ_SHEETS && window.RQ_SHEETS.getStatus() === 'online') {
+    window.RQ_SHEETS.recordAttendance(newLog).catch(e => console.error('Gagal simpan log ke Spreadsheet:', e));
   }
 
   if (type === 'Hadir') {
@@ -1167,8 +1167,8 @@ function deleteLogEntry(logId) {
   attendanceLogs = attendanceLogs.filter(l => l.id !== logId);
   saveLogsToStorage();
 
-  if (window.RQ_FIREBASE && window.RQ_FIREBASE.getStatus() === 'online') {
-    window.RQ_FIREBASE.deleteAttendanceLog(logId).catch(e => console.error('Gagal hapus log dari cloud:', e));
+  if (window.RQ_SHEETS && window.RQ_SHEETS.getStatus() === 'online') {
+    window.RQ_SHEETS.deleteAttendance(logId).catch(e => console.error('Gagal hapus log dari Spreadsheet:', e));
   }
 
   showToast('Catatan presensi berhasil dihapus.', 'info');
@@ -1538,8 +1538,8 @@ function saveSlipDesignerSettings(e) {
 
   saveSlipSettingsToStorage();
 
-  if (window.RQ_FIREBASE && window.RQ_FIREBASE.getStatus() === 'online') {
-    window.RQ_FIREBASE.writeSlipSettings(slipSettings).catch(e => console.error('Gagal simpan slip settings ke cloud:', e));
+  if (window.RQ_SHEETS && window.RQ_SHEETS.getStatus() === 'online') {
+    window.RQ_SHEETS.saveSlipSettings(slipSettings).catch(e => console.error('Gagal simpan slip settings ke Spreadsheet:', e));
   }
 
   closeSlipDesignerModal();
@@ -1618,8 +1618,8 @@ function saveTeacherSalaryOverride(e) {
 
   saveSalaryOverridesToStorage();
 
-  if (window.RQ_FIREBASE && window.RQ_FIREBASE.getStatus() === 'online') {
-    window.RQ_FIREBASE.writeSalaryOverrides(salaryOverrides).catch(e => console.error('Gagal simpan salary overrides ke cloud:', e));
+  if (window.RQ_SHEETS && window.RQ_SHEETS.getStatus() === 'online') {
+    window.RQ_SHEETS.saveSalaryOverrides(salaryOverrides).catch(e => console.error('Gagal simpan salary overrides ke Spreadsheet:', e));
   }
 
   closeEditTeacherSalaryModal();
@@ -1639,8 +1639,8 @@ function resetTeacherSalaryToDefault() {
 
   saveSalaryOverridesToStorage();
 
-  if (window.RQ_FIREBASE && window.RQ_FIREBASE.getStatus() === 'online') {
-    window.RQ_FIREBASE.writeSalaryOverrides(salaryOverrides).catch(e => console.error('Gagal simpan salary overrides ke cloud:', e));
+  if (window.RQ_SHEETS && window.RQ_SHEETS.getStatus() === 'online') {
+    window.RQ_SHEETS.saveSalaryOverrides(salaryOverrides).catch(e => console.error('Gagal simpan salary overrides ke Spreadsheet:', e));
   }
 
   closeEditTeacherSalaryModal();
@@ -2253,8 +2253,8 @@ function saveTeacherFromModal(e) {
 
   saveTeachersToStorage();
 
-  if (window.RQ_FIREBASE && window.RQ_FIREBASE.getStatus() === 'online' && savedTeacher) {
-    window.RQ_FIREBASE.writeTeacher(savedTeacher).catch(e => console.error('Gagal simpan guru ke cloud:', e));
+  if (window.RQ_SHEETS && window.RQ_SHEETS.getStatus() === 'online' && savedTeacher) {
+    window.RQ_SHEETS.saveTeacher(savedTeacher).catch(e => console.error('Gagal simpan guru ke Spreadsheet:', e));
   }
 
   closeTeacherModal();
@@ -2283,8 +2283,8 @@ function deleteTeacher(teacherId) {
   teachersList = teachersList.filter(t => t.id !== teacherId);
   saveTeachersToStorage();
 
-  if (window.RQ_FIREBASE && window.RQ_FIREBASE.getStatus() === 'online') {
-    window.RQ_FIREBASE.deleteTeacher(teacherId).catch(e => console.error('Gagal hapus guru dari cloud:', e));
+  if (window.RQ_SHEETS && window.RQ_SHEETS.getStatus() === 'online') {
+    window.RQ_SHEETS.deleteTeacher(teacherId).catch(e => console.error('Gagal hapus guru dari Spreadsheet:', e));
   }
   showToast(`Pengajar ${teacher.name} berhasil dihapus.`, 'info');
 
@@ -2354,9 +2354,9 @@ function saveInstitutionSettings(e) {
   saveSettingsToStorage();
   saveSlipSettingsToStorage();
 
-  if (window.RQ_FIREBASE && window.RQ_FIREBASE.getStatus() === 'online') {
-    window.RQ_FIREBASE.writeGeneralSettings(appSettings).catch(e => console.error('Gagal simpan settings ke cloud:', e));
-    window.RQ_FIREBASE.writeSlipSettings(slipSettings).catch(e => console.error('Gagal simpan slip settings ke cloud:', e));
+  if (window.RQ_SHEETS && window.RQ_SHEETS.getStatus() === 'online') {
+    window.RQ_SHEETS.saveGeneralSettings(appSettings).catch(e => console.error('Gagal simpan settings ke Spreadsheet:', e));
+    window.RQ_SHEETS.saveSlipSettings(slipSettings).catch(e => console.error('Gagal simpan slip settings ke Spreadsheet:', e));
   }
 
   applyInstitutionSettings();
@@ -2647,32 +2647,85 @@ function escapeHtml(str) {
 }
 
 /* ============================================================
-   FIREBASE REAL-TIME CLOUD DATABASE SYNCHRONIZATION
+   GOOGLE SPREADSHEET DATABASE SYNCHRONIZATION
    ============================================================ */
-function initCloudSync() {
-  if (!window.RQ_FIREBASE) return;
+function initSheetsSync() {
+  if (!window.RQ_SHEETS) return;
 
-  // 1. Dengarkan pembaruan status koneksi
-  window.RQ_FIREBASE.onStatusChange((status, config, detail) => {
-    updateCloudStatusUI(status, config, detail);
+  // 1. Dengarkan status koneksi
+  window.RQ_SHEETS.onStatusChange((status, url, detail) => {
+    updateSheetsStatusUI(status, url, detail);
   });
 
-  // 2. Hubungkan ke Firebase jika konfigurasi tersedia
-  const db = window.RQ_FIREBASE.initFirebase();
-  if (db) {
-    attachFirebaseRealtimeListeners();
+  // 2. Jika URL sudah tersimpan, mulai sinkronisasi otomatis
+  const url = window.RQ_SHEETS.getActiveUrl();
+  if (url) {
+    window.RQ_SHEETS.startAutoSync(applySheetsDataReceived, 30);
   }
 }
 
-function updateCloudStatusUI(status, config, detail) {
-  const btnHeader = document.getElementById('btnCloudStatus');
-  const statusText = document.getElementById('cloudStatusText');
-  const cardBadge = document.getElementById('cardCloudStatusBadge');
-  const cardDesc = document.getElementById('cloudStatusDesc');
-  const modalStatus = document.getElementById('modalCloudStatusText');
-  const modalProj = document.getElementById('modalCloudProjectDisplay');
-  const statTeachers = document.getElementById('cloudStatTeachers');
-  const statLogs = document.getElementById('cloudStatLogs');
+function applySheetsDataReceived(data) {
+  if (!data || data.status !== 'success') return;
+
+  let hasChanges = false;
+
+  // 1. Sinkronkan Pengajar
+  if (Array.isArray(data.teachers) && data.teachers.length > 0) {
+    teachersList = data.teachers;
+    saveTeachersToStorage();
+    hasChanges = true;
+  }
+
+  // 2. Sinkronkan Presensi
+  if (Array.isArray(data.logs)) {
+    attendanceLogs = data.logs;
+    saveLogsToStorage();
+    hasChanges = true;
+  }
+
+  // 3. Sinkronkan Pengaturan & PIN
+  if (data.adminPin && String(data.adminPin).trim()) {
+    adminPin = String(data.adminPin).trim();
+    localStorage.setItem(STORAGE_KEYS.ADMIN_PIN, adminPin);
+  }
+
+  if (data.settings && Object.keys(data.settings).length > 0) {
+    appSettings = { ...DEFAULT_SETTINGS, ...data.settings };
+    saveSettingsToStorage();
+    applyInstitutionSettings();
+  }
+
+  if (data.slipSettings && Object.keys(data.slipSettings).length > 0) {
+    slipSettings = { ...DEFAULT_SLIP_SETTINGS, ...data.slipSettings };
+    saveSlipSettingsToStorage();
+  }
+
+  if (data.salaryOverrides) {
+    salaryOverrides = data.salaryOverrides;
+    saveSalaryOverridesToStorage();
+  }
+
+  if (hasChanges) {
+    renderTeacherSelectOptions();
+    renderTeacherQuickChips();
+    renderTodayMonitor();
+    renderTeachersManageTable();
+    loadRecapData();
+    if (isAdminUnlocked) loadSalaryData();
+    onSelectedTeacherChange();
+    updateSheetsStatCounters();
+  }
+}
+
+function updateSheetsStatusUI(status, url, detail) {
+  const btnHeader = document.getElementById('btnSheetsStatus');
+  const statusText = document.getElementById('sheetsStatusText');
+  const cardBadge = document.getElementById('cardSheetsStatusBadge');
+  const cardDesc = document.getElementById('sheetsStatusDesc');
+  const modalStatus = document.getElementById('modalSheetsStatusText');
+  const modalUrl = document.getElementById('modalSheetsUrlDisplay');
+  const statTeachers = document.getElementById('sheetsStatTeachers');
+  const statLogs = document.getElementById('sheetsStatLogs');
 
   if (statTeachers) statTeachers.textContent = `${teachersList.length} Guru`;
   if (statLogs) statLogs.textContent = `${attendanceLogs.length} Catatan`;
@@ -2683,148 +2736,83 @@ function updateCloudStatusUI(status, config, detail) {
 
   if (status === 'online') {
     btnHeader.classList.add('status-online');
-    if (statusText) statusText.textContent = 'Cloud: Terhubung';
+    if (statusText) statusText.textContent = 'Spreadsheet: Terhubung';
     if (cardBadge) {
       cardBadge.className = 'cloud-badge-indicator badge-online';
-      cardBadge.textContent = '🟢 Online (Real-Time)';
+      cardBadge.textContent = '🟢 Online (Terhubung)';
     }
-    if (cardDesc) cardDesc.textContent = `Terhubung ke Firebase (${config.projectId || 'Online'}). Presensi di HP langsung masuk ke Laptop seketika!`;
+    if (cardDesc) cardDesc.textContent = 'Terhubung ke Google Spreadsheet! Setiap presensi guru langsung tersimpan di baris Google Sheets pengelola.';
     if (modalStatus) {
-      modalStatus.innerHTML = '<span style="color:#10b981;">🟢 Terhubung Real-Time</span>';
+      modalStatus.innerHTML = '<span style="color:#10b981;">🟢 Terhubung ke Google Spreadsheet</span>';
     }
-    if (modalProj) {
-      modalProj.textContent = `Project ID: ${config.projectId} (Sinkronisasi aktif di semua HP & PC)`;
+    if (modalUrl) {
+      modalUrl.textContent = `URL Aktif: ${url}`;
     }
   } else if (status === 'connecting') {
     btnHeader.classList.add('status-connecting');
-    if (statusText) statusText.textContent = 'Cloud: Menghubungkan...';
+    if (statusText) statusText.textContent = 'Menghubungkan...';
     if (cardBadge) {
       cardBadge.className = 'cloud-badge-indicator badge-offline';
       cardBadge.textContent = '🟡 Menghubungkan...';
     }
-    if (cardDesc) cardDesc.textContent = 'Sedang menyambungkan ke Firebase Firestore...';
-    if (modalStatus) modalStatus.innerHTML = '<span style="color:#f59e0b;">🟡 Menghubungkan...</span>';
+    if (cardDesc) cardDesc.textContent = 'Sedang membaca data dari Google Spreadsheet...';
+    if (modalStatus) modalStatus.innerHTML = '<span style="color:#f59e0b;">🟡 Sedang Menghubungkan...</span>';
   } else if (status === 'error') {
     btnHeader.classList.add('status-error');
-    if (statusText) statusText.textContent = 'Cloud: Gagal';
+    if (statusText) statusText.textContent = 'Spreadsheet: Gagal';
     if (cardBadge) {
       cardBadge.className = 'cloud-badge-indicator badge-offline';
       cardBadge.textContent = '🔴 Gagal Terhubung';
     }
-    if (cardDesc) cardDesc.textContent = `Koneksi gagal: ${detail || 'Periksa API Key / Project ID'}. Data beralih sementara ke memori lokal.`;
-    if (modalStatus) modalStatus.innerHTML = `<span style="color:#ef4444;">🔴 Gagal: ${escapeHtml(detail || 'Error')}</span>`;
+    if (cardDesc) cardDesc.textContent = `Koneksi gagal: ${detail || 'Periksa URL Web App Spreadsheet'}. Data beralih sementara ke memori lokal.`;
+    if (modalStatus) modalStatus.innerHTML = `<span style="color:#ef4444;">🔴 Gagal: ${escapeHtml(detail || 'Periksa URL')}</span>`;
   } else {
-    // Unconfigured / offline
+    // Unconfigured
     btnHeader.classList.add('status-offline');
-    if (statusText) statusText.textContent = 'Cloud: Lokal';
+    if (statusText) statusText.textContent = 'Spreadsheet: Belum';
     if (cardBadge) {
       cardBadge.className = 'cloud-badge-indicator badge-offline';
-      cardBadge.textContent = '🟠 Mode Lokal (Offline)';
+      cardBadge.textContent = '🟠 Belum Terhubung';
     }
-    if (cardDesc) cardDesc.textContent = 'Belum terhubung ke Firebase. Klik tombol di kanan untuk menghubungkan agar HP & laptop sinkron.';
+    if (cardDesc) cardDesc.textContent = 'Belum terhubung ke Google Spreadsheet. Klik tombol di kanan untuk menghubungkan agar HP & laptop sinkron.';
     if (modalStatus) modalStatus.innerHTML = '<span style="color:#f59e0b;">⚪ Belum Dikonfigurasi (Mode Lokal)</span>';
-    if (modalProj) modalProj.textContent = 'Data masih tersimpan di memori browser ini saja.';
+    if (modalUrl) modalUrl.textContent = 'Data masih tersimpan di memori browser ini saja.';
   }
 }
 
-function attachFirebaseRealtimeListeners() {
-  if (!window.RQ_FIREBASE) return;
-
-  // 1. Guru
-  window.RQ_FIREBASE.listenTeachers((teachers) => {
-    if (Array.isArray(teachers) && teachers.length > 0) {
-      teachersList = teachers;
-      saveTeachersToStorage();
-      renderTeacherSelectOptions();
-      renderTeacherQuickChips();
-      renderTodayMonitor();
-      renderTeachersManageTable();
-      loadRecapData();
-      if (isAdminUnlocked) loadSalaryData();
-      updateCloudStatCounters();
-    }
-  });
-
-  // 2. Presensi Logs
-  window.RQ_FIREBASE.listenAttendanceLogs((logs) => {
-    if (Array.isArray(logs)) {
-      attendanceLogs = logs;
-      saveLogsToStorage();
-      renderTodayMonitor();
-      renderTeacherQuickChips();
-      loadRecapData();
-      if (isAdminUnlocked) loadSalaryData();
-      onSelectedTeacherChange();
-      updateCloudStatCounters();
-    }
-  });
-
-  // 3. Settings & PIN
-  window.RQ_FIREBASE.listenSettings((settingsData) => {
-    if (settingsData.general) {
-      appSettings = { ...DEFAULT_SETTINGS, ...settingsData.general };
-      saveSettingsToStorage();
-      applyInstitutionSettings();
-    }
-    if (settingsData.security && settingsData.security.adminPin) {
-      adminPin = String(settingsData.security.adminPin).trim();
-      localStorage.setItem(STORAGE_KEYS.ADMIN_PIN, adminPin);
-    }
-    if (settingsData.slip) {
-      slipSettings = { ...DEFAULT_SLIP_SETTINGS, ...settingsData.slip };
-      saveSlipSettingsToStorage();
-    }
-    if (settingsData.salary_overrides && settingsData.salary_overrides.overrides) {
-      salaryOverrides = settingsData.salary_overrides.overrides;
-      saveSalaryOverridesToStorage();
-      if (isAdminUnlocked) loadSalaryData();
-    }
-  });
-}
-
-function updateCloudStatCounters() {
-  const statTeachers = document.getElementById('cloudStatTeachers');
-  const statLogs = document.getElementById('cloudStatLogs');
+function updateSheetsStatCounters() {
+  const statTeachers = document.getElementById('sheetsStatTeachers');
+  const statLogs = document.getElementById('sheetsStatLogs');
   if (statTeachers) statTeachers.textContent = `${teachersList.length} Guru`;
   if (statLogs) statLogs.textContent = `${attendanceLogs.length} Catatan`;
 }
 
 /* ============================================================
-   FIREBASE MODAL UI CONTROLLERS
+   MODAL GOOGLE SPREADSHEET CONTROLLERS
    ============================================================ */
-function openFirebaseConfigModal() {
-  const modal = document.getElementById('modalFirebaseConfig');
+function openSheetsConfigModal() {
+  const modal = document.getElementById('modalSheetsConfig');
   if (!modal) return;
 
-  const cfg = window.RQ_FIREBASE ? window.RQ_FIREBASE.getActiveConfig() : {};
-  const elProj = document.getElementById('fbInputProjectId');
-  const elKey = document.getElementById('fbInputApiKey');
-  const elAuth = document.getElementById('fbInputAuthDomain');
-  const elBucket = document.getElementById('fbInputStorageBucket');
-  const elAppId = document.getElementById('fbInputAppId');
-  const elMsg = document.getElementById('fbInputMessagingId');
-
-  if (elProj) elProj.value = cfg.projectId || '';
-  if (elKey) elKey.value = cfg.apiKey || '';
-  if (elAuth) elAuth.value = cfg.authDomain || '';
-  if (elBucket) elBucket.value = cfg.storageBucket || '';
-  if (elAppId) elAppId.value = cfg.appId || '';
-  if (elMsg) elMsg.value = cfg.messagingSenderId || '';
+  const urlInput = document.getElementById('inputSheetsWebAppUrl');
+  if (urlInput && window.RQ_SHEETS) {
+    urlInput.value = window.RQ_SHEETS.getActiveUrl() || '';
+  }
 
   modal.style.display = 'flex';
 }
 
-function closeFirebaseConfigModal() {
-  const modal = document.getElementById('modalFirebaseConfig');
+function closeSheetsConfigModal() {
+  const modal = document.getElementById('modalSheetsConfig');
   if (modal) modal.style.display = 'none';
 }
 
-function switchFbModalTab(tab) {
+function switchSheetsModalTab(tab) {
   const isForm = tab === 'form';
-  const tabForm = document.getElementById('fbModalTabForm');
-  const tabGuide = document.getElementById('fbModalTabGuide');
-  const btnForm = document.getElementById('btnTabFbForm');
-  const btnGuide = document.getElementById('btnTabFbGuide');
+  const tabForm = document.getElementById('sheetsModalTabForm');
+  const tabGuide = document.getElementById('sheetsModalTabGuide');
+  const btnForm = document.getElementById('btnTabSheetsForm');
+  const btnGuide = document.getElementById('btnTabSheetsGuide');
 
   if (tabForm) tabForm.style.display = isForm ? 'block' : 'none';
   if (tabGuide) tabGuide.style.display = isForm ? 'none' : 'block';
@@ -2832,96 +2820,70 @@ function switchFbModalTab(tab) {
   if (btnGuide) btnGuide.classList.toggle('active', !isForm);
 }
 
-function parseAndFillFirebaseJson() {
-  const text = (document.getElementById('fbInputPasteJson').value || '').trim();
-  if (!text) {
-    showToast('Tempel cuplikan kode konfigurasi Firebase terlebih dahulu.', 'warning');
+async function testSheetsConnection() {
+  const urlInput = document.getElementById('inputSheetsWebAppUrl');
+  const url = urlInput ? urlInput.value.trim() : '';
+
+  if (!url || !url.startsWith('http')) {
+    showToast('Masukkan URL Web App Google Apps Script terlebih dahulu.', 'warning');
     return;
   }
 
   try {
-    const extract = (field) => {
-      const match = text.match(new RegExp(`${field}\\s*:\\s*["']([^"']+)["']`, 'i'));
-      return match ? match[1] : '';
-    };
-
-    const apiKey = extract('apiKey');
-    const projectId = extract('projectId');
-    const authDomain = extract('authDomain');
-    const storageBucket = extract('storageBucket');
-    const messagingSenderId = extract('messagingSenderId');
-    const appId = extract('appId');
-
-    if (!projectId && !apiKey) {
-      showToast('Gagal menemukan apiKey atau projectId dalam teks.', 'error');
-      return;
-    }
-
-    if (apiKey) document.getElementById('fbInputApiKey').value = apiKey;
-    if (projectId) document.getElementById('fbInputProjectId').value = projectId;
-    if (authDomain) document.getElementById('fbInputAuthDomain').value = authDomain;
-    if (storageBucket) document.getElementById('fbInputStorageBucket').value = storageBucket;
-    if (messagingSenderId) document.getElementById('fbInputMessagingId').value = messagingSenderId;
-    if (appId) document.getElementById('fbInputAppId').value = appId;
-
-    showToast('Berhasil mengekstrak konfigurasi Firebase!', 'success');
-  } catch (err) {
-    showToast('Format teks belum sesuai: ' + err.message, 'error');
-  }
-}
-
-function saveFirebaseConfigAction() {
-  const projectId = document.getElementById('fbInputProjectId').value.trim();
-  const apiKey = document.getElementById('fbInputApiKey').value.trim();
-
-  if (!projectId || !apiKey) {
-    showToast('Project ID dan API Key Firebase wajib diisi!', 'warning');
-    return;
-  }
-
-  const cfg = {
-    projectId,
-    apiKey,
-    authDomain: document.getElementById('fbInputAuthDomain').value.trim(),
-    storageBucket: document.getElementById('fbInputStorageBucket').value.trim(),
-    appId: document.getElementById('fbInputAppId').value.trim(),
-    messagingSenderId: document.getElementById('fbInputMessagingId').value.trim()
-  };
-
-  try {
-    window.RQ_FIREBASE.saveConfig(cfg);
-    window.RQ_FIREBASE.detachListeners();
-    const db = window.RQ_FIREBASE.initFirebase();
-    if (db) {
-      attachFirebaseRealtimeListeners();
-      showToast('Alhamdulillah! Berhasil terhubung ke Firebase.', 'success');
-      closeFirebaseConfigModal();
+    showToast('Menguji koneksi ke Google Spreadsheet...', 'info');
+    window.RQ_SHEETS.saveUrl(url);
+    const data = await window.RQ_SHEETS.fetchAllFromSheet();
+    if (data && data.status === 'success') {
+      applySheetsDataReceived(data);
+      window.RQ_SHEETS.startAutoSync(applySheetsDataReceived, 30);
+      showToast('Alhamdulillah! Koneksi ke Google Spreadsheet berhasil 100%!', 'success');
+    } else {
+      showToast('Spreadsheet merespon tetapi data belum siap. Silakan pastikan izin diatur ke "Anyone".', 'warning');
     }
   } catch (err) {
-    showToast('Gagal menyimpan konfigurasi: ' + err.message, 'error');
+    showToast('Koneksi gagal: ' + err.message, 'error');
   }
 }
 
-function resetFirebaseConfigAction() {
-  if (!confirm('Putuskan koneksi Firebase dan kembali ke mode LocalStorage lokal?')) return;
-  window.RQ_FIREBASE.removeConfig();
-  showToast('Koneksi Firebase diputuskan. Berjalan dalam mode lokal.', 'info');
-}
+function saveSheetsConfigAction() {
+  const urlInput = document.getElementById('inputSheetsWebAppUrl');
+  const url = urlInput ? urlInput.value.trim() : '';
 
-async function syncLocalToCloudAction() {
-  if (!window.RQ_FIREBASE || window.RQ_FIREBASE.getStatus() !== 'online') {
-    showToast('Firebase belum terhubung. Silakan hubungkan Firebase terlebih dahulu.', 'warning');
-    openFirebaseConfigModal();
-    return;
-  }
-
-  if (!confirm('Unggah seluruh data lokal saat ini (Daftar Guru, Log Kehadiran, PIN, dan Pengaturan) ke Cloud Firestore?')) {
+  if (!url || !url.startsWith('http')) {
+    showToast('URL Google Apps Script wajib diisi (berawalan https://script.google.com/...)!', 'warning');
     return;
   }
 
   try {
-    showToast('Sedang mengunggah data ke Cloud Firestore...', 'info');
-    await window.RQ_FIREBASE.uploadLocalDataToCloud({
+    window.RQ_SHEETS.saveUrl(url);
+    window.RQ_SHEETS.startAutoSync(applySheetsDataReceived, 30);
+    showToast('URL Spreadsheet berhasil disimpan! Menyinkronkan data...', 'success');
+    closeSheetsConfigModal();
+  } catch (err) {
+    showToast('Gagal menyimpan URL: ' + err.message, 'error');
+  }
+}
+
+function resetSheetsConfigAction() {
+  if (!confirm('Putuskan tautan Google Spreadsheet dan kembali ke mode penyimpanan lokal?')) return;
+  window.RQ_SHEETS.removeUrl();
+  showToast('Koneksi Google Spreadsheet diputuskan. Berjalan dalam mode lokal.', 'info');
+}
+
+async function syncLocalToSheetsAction() {
+  if (!window.RQ_SHEETS || !window.RQ_SHEETS.getActiveUrl()) {
+    showToast('Google Spreadsheet belum terhubung. Silakan masukkan URL terlebih dahulu.', 'warning');
+    openSheetsConfigModal();
+    return;
+  }
+
+  if (!confirm('Unggah seluruh data lokal saat ini (Daftar Guru, Log Kehadiran, PIN, dan Pengaturan) ke Google Spreadsheet?')) {
+    return;
+  }
+
+  try {
+    showToast('Sedang mengirim data ke Google Spreadsheet...', 'info');
+    await window.RQ_SHEETS.uploadAllLocalToSpreadsheet({
       teachers: teachersList,
       logs: attendanceLogs,
       settings: appSettings,
@@ -2929,20 +2891,35 @@ async function syncLocalToCloudAction() {
       slipSettings: slipSettings,
       salaryOverrides: salaryOverrides
     });
-    showToast('Alhamdulillah! Seluruh data lokal berhasil tersinkron ke Cloud.', 'success');
-    updateCloudStatCounters();
-    closeFirebaseConfigModal();
+    showToast('Alhamdulillah! Seluruh data berhasil tersimpan ke Google Spreadsheet.', 'success');
+    updateSheetsStatCounters();
+    closeSheetsConfigModal();
   } catch (err) {
-    showToast('Gagal mengunggah data: ' + err.message, 'error');
+    showToast('Gagal mengunggah data ke Spreadsheet: ' + err.message, 'error');
   }
 }
 
-// Global window exposure for HTML onclick bindings
-window.openFirebaseConfigModal = openFirebaseConfigModal;
-window.closeFirebaseConfigModal = closeFirebaseConfigModal;
-window.switchFbModalTab = switchFbModalTab;
-window.parseAndFillFirebaseJson = parseAndFillFirebaseJson;
-window.saveFirebaseConfigAction = saveFirebaseConfigAction;
-window.resetFirebaseConfigAction = resetFirebaseConfigAction;
-window.syncLocalToCloudAction = syncLocalToCloudAction;
+function copySheetsScriptCode() {
+  // Script Google Apps Script yang siap disalin
+  const scriptCode = `function doGet(e){try{var s=SpreadsheetApp.getActiveSpreadsheet();ensureStructure(s);return ContentService.createTextOutput(JSON.stringify({status:"success",teachers:readTeachers(s),logs:readLogs(s),settings:readSettings(s).settings||{},slipSettings:readSettings(s).slipSettings||{},adminPin:readSettings(s).adminPin||"1234",salaryOverrides:readSettings(s).salaryOverrides||{}})).setMimeType(ContentService.MimeType.JSON)}catch(r){return ContentService.createTextOutput(JSON.stringify({status:"error",message:r.toString()})).setMimeType(ContentService.MimeType.JSON)}}function doPost(e){try{var s=SpreadsheetApp.getActiveSpreadsheet();ensureStructure(s);var t={};e&&e.postData&&e.postData.contents?t=JSON.parse(e.postData.contents):t=e.parameter||{};var a=t.action;"record_attendance"===a?appendLog(s,t.data):"delete_log"===a?deleteLog(s,t.logId):"save_teacher"===a?upsertTeacher(s,t.data):"delete_teacher"===a?deleteTeacher(s,t.teacherId):"save_pin"===a?writeSetting(s,"adminPin",String(t.pin).trim()):"save_settings"===a?writeSetting(s,"settings",JSON.stringify(t.settings)):"save_slip_settings"===a?writeSetting(s,"slipSettings",JSON.stringify(t.slipSettings)):"save_overrides"===a?writeSetting(s,"salaryOverrides",JSON.stringify(t.overrides)):"sync_all"===a&&syncAllData(s,t.data);return ContentService.createTextOutput(JSON.stringify({status:"success",action:a})).setMimeType(ContentService.MimeType.JSON)}catch(r){return ContentService.createTextOutput(JSON.stringify({status:"error",message:r.toString()})).setMimeType(ContentService.MimeType.JSON)}}function ensureStructure(e){var t=e.getSheetByName("Presensi");t||((t=e.insertSheet("Presensi")).appendRow(["ID Log","Tanggal","Jam","Nama Pengajar","ID Pengajar","Status Kehadiran","Keterangan","Waktu Tercatat"]),t.getRange(1,1,1,8).setFontWeight("bold").setBackground("#065f46").setFontColor("#ffffff"),t.setFrozenRows(1));var r=e.getSheetByName("Data_Pengajar");r||((r=e.insertSheet("Data_Pengajar")).appendRow(["ID Pengajar","Nama Lengkap Ustadz/Ustadzah","Halaqah / Tugas","No. WhatsApp","Status"]),r.getRange(1,1,1,5).setFontWeight("bold").setBackground("#1d4ed8").setFontColor("#ffffff"),r.setFrozenRows(1),[["tch-1","Ustadz Muhammad Fikri Haekal, C.LQ","Kelas Tahfizh Menengah Ikhwan","082189480869","Aktif"],["tch-2","Ustadzah Ummu Khadijah","Kelas Tahfizh Dasar Ikhwan & Akhowat","082339495396","Aktif"],["tch-3","Ustadzah A. Lulu Aprilia Latifa","Kelas Tahfizh Menengah Akhowat","087722442651","Aktif"],["tch-4","Ustadzah Khirfatul jannah","Kelas Tahfizh Dasar Ikhwan","089654707922","Aktif"]].forEach(function(e){r.appendRow(e)}));var n=e.getSheetByName("Pengaturan");n||((n=e.insertSheet("Pengaturan")).appendRow(["Kunci","Nilai"]),n.getRange(1,1,1,2).setFontWeight("bold").setBackground("#334155").setFontColor("#ffffff"),n.setFrozenRows(1),n.appendRow(["adminPin","1234"]))}function readLogs(e){var t=e.getSheetByName("Presensi");if(!t)return[];var r=t.getDataRange().getValues();if(r.length<=1)return[];for(var n=[],a=1;a<r.length;a++){var g=r[a];(g[0]||g[3])&&n.push({id:String(g[0]||"log-"+a),date:String(g[1]||""),time:String(g[2]||""),teacherName:String(g[3]||""),teacherId:String(g[4]||""),type:String(g[5]||"Hadir"),note:String(g[6]||"")})}return n}function readTeachers(e){var t=e.getSheetByName("Data_Pengajar");if(!t)return[];var r=t.getDataRange().getValues();if(r.length<=1)return[];for(var n=[],a=1;a<r.length;a++){var g=r[a];(g[0]||g[1])&&n.push({id:String(g[0]||"tch-"+a),name:String(g[1]||""),halaqah:String(g[2]||""),phone:String(g[3]||""),status:String(g[4]||"Aktif")})}return n}function readSettings(e){var t=e.getSheetByName("Pengaturan");if(!t)return{adminPin:"1234"};for(var r=t.getDataRange().getValues(),n={adminPin:"1234"},a=1;a<r.length;a++){var g=String(r[a][0]).trim(),s=String(r[a][1]).trim();"adminPin"===g?n.adminPin=s||"1234":"settings"===g?n.settings=JSON.parse(s):"slipSettings"===g?n.slipSettings=JSON.parse(s):"salaryOverrides"===g&&(n.salaryOverrides=JSON.parse(s))}return n}function appendLog(e,t){var r=e.getSheetByName("Presensi");if(r){var n=t.id||"log-"+Date.now();r.appendRow([n,t.date||"",t.time||"",t.teacherName||"",t.teacherId||"",t.type||"Hadir",t.note||"",new Date().toLocaleString("id-ID")])}}function deleteLog(e,t){var r=e.getSheetByName("Presensi");if(r&&t)for(var n=r.getDataRange().getValues(),a=1;a<n.length;a++)if(String(n[a][0])===String(t)){r.deleteRow(a+1);return}}function upsertTeacher(e,t){var r=e.getSheetByName("Data_Pengajar");if(r&&t){for(var n=r.getDataRange().getValues(),a=t.id||"tch-"+Date.now(),g=1;g<n.length;g++)if(String(n[g][0])===String(a)){r.getRange(g+1,2).setValue(t.name||""),r.getRange(g+1,3).setValue(t.halaqah||""),r.getRange(g+1,4).setValue(t.phone||""),r.getRange(g+1,5).setValue(t.status||"Aktif");return}r.appendRow([a,t.name||"",t.halaqah||"",t.phone||"",t.status||"Aktif"])}}function deleteTeacher(e,t){var r=e.getSheetByName("Data_Pengajar");if(r&&t)for(var n=r.getDataRange().getValues(),a=1;a<n.length;a++)if(String(n[a][0])===String(t)){r.deleteRow(a+1);return}}function writeSetting(e,t,r){var n=e.getSheetByName("Pengaturan");if(n){for(var a=n.getDataRange().getValues(),g=1;g<a.length;g++)if(String(a[g][0])===String(t)){n.getRange(g+1,2).setValue(r);return}n.appendRow([t,r])}}function syncAllData(e,t){if(t.adminPin&&writeSetting(e,"adminPin",String(t.adminPin).trim()),t.settings&&writeSetting(e,"settings",JSON.stringify(t.settings)),t.slipSettings&&writeSetting(e,"slipSettings",JSON.stringify(t.slipSettings)),t.salaryOverrides&&writeSetting(e,"salaryOverrides",JSON.stringify(t.salaryOverrides)),Array.isArray(t.teachers)&&t.teachers.forEach(function(t){upsertTeacher(e,t)}),Array.isArray(t.logs)){var r=readLogs(e),n=new Set(r.map(function(e){return e.id}));t.logs.forEach(function(t){n.has(t.id)||appendLog(e,t)})}}`;
+
+  navigator.clipboard.writeText(scriptCode)
+    .then(() => {
+      showToast('Kode Script Google Apps Script berhasil disalin ke Clipboard!', 'success');
+    })
+    .catch(() => {
+      showToast('Silakan buka file sheets-backend.gs di folder project untuk menyalin kodenya.', 'info');
+    });
+}
+
+// Window bindings
+window.openSheetsConfigModal = openSheetsConfigModal;
+window.closeSheetsConfigModal = closeSheetsConfigModal;
+window.switchSheetsModalTab = switchSheetsModalTab;
+window.testSheetsConnection = testSheetsConnection;
+window.saveSheetsConfigAction = saveSheetsConfigAction;
+window.resetSheetsConfigAction = resetSheetsConfigAction;
+window.syncLocalToSheetsAction = syncLocalToSheetsAction;
+window.copySheetsScriptCode = copySheetsScriptCode;
+
 
